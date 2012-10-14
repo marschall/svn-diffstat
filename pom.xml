@@ -27,20 +27,18 @@
     </pluginManagement>
   </build>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.jfree</groupId>
-        <artifactId>jfreechart</artifactId>
-        <version>1.0.14</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tmatesoft.svnkit</groupId>
-        <artifactId>svnkit</artifactId>
-        <version>1.7.5</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.jfree</groupId>
+      <artifactId>jfreechart</artifactId>
+      <version>1.0.14</version>
+    </dependency>
+    <dependency>
+      <groupId>org.tmatesoft.svnkit</groupId>
+      <artifactId>svnkit</artifactId>
+      <version>1.7.5</version>
+    </dependency>
+  </dependencies>
 
 
   <properties>
