@@ -3,17 +3,17 @@ package com.github.marschal.svndiffstat;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
 import org.tmatesoft.svn.core.SVNDepth;
-import org.tmatesoft.svn.core.SVNErrorCode;
-import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNProperties;
@@ -25,9 +25,10 @@ import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 
-public class Main {
+public class DiffStatGenerator {
 
 	public static void main(String[] args) throws SVNException {
+		System.out.println("!!!current user directory must be working copy!!!");
 		FSRepositoryFactory.setup();
 		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
@@ -51,7 +52,9 @@ public class Main {
 		System.out.println("=========================");
 		
 		SVNDiffClient diffClient = clientManager.getDiffClient();
-		diffClient.setDiffGenerator(new PerFileDiffGenerator(diffClient.getDiffGenerator()));
+//		Set<String> includedFiles = new HashSet<>(Arrays.asList("java", "xml"));
+		Set<String> includedFiles = Collections.singleton("java");
+		diffClient.setDiffGenerator(new DiffStatDiffGenerator(diffClient.getDiffGenerator(), includedFiles));
 		SVNDepth depth = SVNDepth.INFINITY;
 		boolean useAncestry = true;
 //		diffClient.setGitDiffFormat(true);
@@ -96,12 +99,24 @@ public class Main {
 		
 	}
 	
-	static final class PerFileDiffGenerator implements ISVNDiffGenerator {
+	static final class DiffStatDiffGenerator implements ISVNDiffGenerator {
 		
 		private final ISVNDiffGenerator delegate;
+		private final List<DiffStat> diffStats;
+		private final Set<String> includedFileExtensions;
 		
-		PerFileDiffGenerator(ISVNDiffGenerator delegate) {
+		DiffStatDiffGenerator(ISVNDiffGenerator delegate, Set<String> includedFileExtensions) {
 			this.delegate = delegate;
+			this.includedFileExtensions = includedFileExtensions;
+			this.diffStats = new ArrayList<>();
+		}
+		
+		List<DiffStat> getDiffStats() {
+			return this.diffStats;
+		}
+		
+		void clearDiffStats() {
+			this.diffStats.clear();
 		}
 
 		@Override
@@ -198,14 +213,49 @@ public class Main {
 		public void displayFileDiff(String path, File file1, File file2,
 				String rev1, String rev2, String mimeType1, String mimeType2,
 				OutputStream result) throws SVNException {
-			// TODO Auto-generated method stub
-			try {
-				result.write("\nXXXXXXXXXXXXXXXXXXXXX\n".getBytes());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (this.considerFile(path)) {
+				try {
+					result.write("\nXXXXXXXXXXXXXXXXXXXXX\n".getBytes());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				// ResetOutStream stream = (ResetOutStream) result;
+				// stream.initialize();
+				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
+				// this.diffStats.add(stream.finish());
 			}
-			this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
+		}
+		
+		private boolean considerFile(String path) {
+			if (path == null || path.isEmpty()) {
+				return false;
+			}
+			String extension = getExtension(path);
+			return extension != null && this.includedFileExtensions.contains(extension);
+		}
+		
+		private static String getExtension(String path) {
+			int lastIndex = lastIndexOf('.', path);
+			if (lastIndex == -1 || lastIndex == path.length() - 1) {
+				return null;
+			}
+			return path.substring(lastIndex + 1, path.length());
+		}
+		
+		private static int lastIndexOf(char c, String s) {
+			int lastIndex = s.indexOf(c);
+			if (lastIndex == -1) {
+				return lastIndex;
+			}
+			while (true) {
+				int nextIndex = s.indexOf(c, lastIndex + 1);
+				if (nextIndex == -1) {
+					return lastIndex;
+				}
+				lastIndex = nextIndex;
+			}
+			
 		}
 
 		@Override
