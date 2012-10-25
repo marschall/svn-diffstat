@@ -2,14 +2,29 @@ package com.github.marschal.svndiffstat;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 class ResetOutStream extends OutputStream {
+	
+	private static final String INDEX_PREFIX = "Index: ";
+	private static final String MARKER = "===================================================================";
+	private static final String OLD_FILE = "--- ";
+	private static final String NEW_FILE = "+++ ";
+	private static final String ADDED = "+";
+	private static final String REMOVED = "-";
 	
 	private byte[] data;
 	private int position;
 	
 	private int added;
 	private int removed;
+	
+	private byte[] eol;
+	private byte[] indexMarker;
+	private byte[] oldFileMarker;
+	private byte[] newFileMarker;
+	private byte[] addedMarker;
+	private byte[] removedMarker;
 	
 	ResetOutStream() {
 		this(0x1FFF);
@@ -20,6 +35,35 @@ class ResetOutStream extends OutputStream {
 		this.position = 0;
 		this.added = 0;
 		this.removed = 0;
+		// FIXME
+		this.eol = System.getProperty("line.separator").getBytes();
+		this.setEncoding(System.getProperty("file.encoding"));
+	}
+	
+	void setEncoding(String encoding) {
+		try {
+			this.indexMarker = INDEX_PREFIX.getBytes(encoding);
+			this.oldFileMarker = OLD_FILE.getBytes(encoding);
+			this.newFileMarker = NEW_FILE.getBytes(encoding);
+			this.addedMarker = ADDED.getBytes(encoding);
+			this.removedMarker = REMOVED.getBytes(encoding);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException("encoding " + encoding + " not supported", e);
+		}
+	}
+	
+	private boolean isAt(byte[] b, int position) {
+		for (int i = 0; i < b.length; i++) {
+			if (this.data[position + i] != b[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private int indexOf() {
+		// FIXME
+		throw new UnsupportedOperationException();
 	}
 	
 	void initialize() {
