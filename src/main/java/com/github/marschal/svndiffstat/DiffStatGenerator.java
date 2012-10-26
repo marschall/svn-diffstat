@@ -214,16 +214,11 @@ public class DiffStatGenerator {
 				String rev1, String rev2, String mimeType1, String mimeType2,
 				OutputStream result) throws SVNException {
 			if (this.considerFile(path)) {
-				try {
-					result.write("\nXXXXXXXXXXXXXXXXXXXXX\n".getBytes());
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				// ResetOutStream stream = (ResetOutStream) result;
-				// stream.initialize();
+				ResetOutStream resetOutStream = new ResetOutStream();
 				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
-				// this.diffStats.add(stream.finish());
+				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, resetOutStream);
+				DiffStat diffStat = resetOutStream.finish();
+				System.out.printf("%n%s%n", diffStat);
 			}
 		}
 		

@@ -68,7 +68,8 @@ class ResetOutStream extends OutputStream {
 	}
 	
 	private boolean startsWith(byte[] b) {
-		for (int i = 0; i < b.length; i++) {
+		int prefixLength = b.length;
+		for (int i = 0; i < prefixLength; i++) {
 			if (this.data[this.readPosition + i] != b[i]) {
 				return false;
 			}
@@ -77,9 +78,8 @@ class ResetOutStream extends OutputStream {
 	}
 	
 	private int indexOf(byte[] b) {
-		int dataLength = this.data.length;
 		int argumentLength = b.length;
-		outerloop : for (int i = this.readPosition; i < dataLength; i++) {
+		outerloop : for (int i = this.readPosition; i < this.writePosition; i++) {
 			for (int j = 0; j < argumentLength; j++) {
 				if (this.data[i + j] != b[j]) {
 					continue outerloop;
@@ -141,12 +141,13 @@ class ResetOutStream extends OutputStream {
 			this.headerParsed = true;
 		}
 		int eolIndex = this.indexOf(this.eol);
-		while (eolIndex != 1) {
+		while (eolIndex != -1) {
 			if (this.startsWith(this.addedMarker)) {
 				this.added += 1;
 			} else if (this.startsWith(this.removedMarker)) {
 				this.removed += 1;
 			}
+			this.readPosition = eolIndex + this.eol.length;
 			eolIndex = this.indexOf(this.eol);
 		}
 	}
@@ -155,7 +156,7 @@ class ResetOutStream extends OutputStream {
 		boolean startsWithHeader = startsWith(marker);
 		if (!startsWithHeader) {
 			// TODO encoding
-			throw new IllegalAccessError(new String(marker) + "expected");
+			throw new IllegalArgumentException(new String(marker) + "expected");
 		}
 		this.readPosition += marker.length;
 	}
@@ -165,7 +166,7 @@ class ResetOutStream extends OutputStream {
 		if (eolIndex == -1) {
 			throw new IllegalArgumentException("EOL expected");
 		}
-		this.readPosition += eolIndex + this.eol.length;
+		this.readPosition = eolIndex + this.eol.length;
 	}
 	
 	DiffStat finish() {

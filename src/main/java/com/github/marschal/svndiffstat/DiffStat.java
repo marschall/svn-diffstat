@@ -9,5 +9,10 @@ final class DiffStat {
 		this.added = added;
 		this.removed = removed;
 	}
+	
+	@Override
+	public String toString() {
+		return this.added + " insertions(+), " + this.removed + " deletions(-)";
+	}
 
 }
