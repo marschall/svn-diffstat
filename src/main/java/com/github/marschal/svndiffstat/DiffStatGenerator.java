@@ -201,16 +201,19 @@ public class DiffStatGenerator {
         additionDeletionAxis.setLabelFont(helvetica);
         additionDeletionAxis.setTickLabelFont(helvetica);
         additionDeletionAxis.setRangeType(RangeType.FULL);
-//        rangeAxis.setAutoRangeMinimumSize(minimum(aggregatedDiffstats));
-//        rangeAxis.setAutoRange(true);
-//        rangeAxis.setAutoRangeIncludesZero(false);
+        additionDeletionAxis.setLowerBound(minimum(aggregatedDiffstats));
+        additionDeletionAxis.setUpperBound(maximum(aggregatedDiffstats));
+//        additionDeletionAxis.setAutoRange(true);
+//        additionDeletionAxis.setAutoRangeIncludesZero(false);
         
         XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
         areaRenderer.setOutline(true);
-//        areaRenderer.setSeriesFillPaint(0, Color.cyan);
         areaRenderer.setSeriesOutlinePaint(0, ADDED_STROKE);
         areaRenderer.setSeriesOutlineStroke(0, new BasicStroke(1.5f));
         areaRenderer.setSeriesPaint(0, ADDED_FILL);
+        areaRenderer.setSeriesOutlinePaint(1, REMOVED_STROKE);
+        areaRenderer.setSeriesOutlineStroke(1, new BasicStroke(1.5f));
+        areaRenderer.setSeriesPaint(1, REMOVED_FILL);
 		plot.setRenderer(0, areaRenderer);
 		
 //		// make total dashed
@@ -250,7 +253,7 @@ public class DiffStatGenerator {
 		for (DiffStat diffStat : aggregatedDiffstats.values()) {
 			minimum = min(minimum, -diffStat.removed());
 		}
-		return minimum;
+		return minimum + (int) (minimum * 0.10);
 	}
 	
 	private static int maximum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
@@ -258,7 +261,7 @@ public class DiffStatGenerator {
 		for (DiffStat diffStat : aggregatedDiffstats.values()) {
 			maximum = max(maximum, diffStat.added());
 		}
-		return maximum;
+		return maximum + (int) (maximum * 0.10);
 	}
 	
 	private static XYDataset createDeltaDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
@@ -274,14 +277,14 @@ public class DiffStatGenerator {
 		}
 		dataset.addSeries(addedSeries);
 		
-//		TimeSeries removedSeries = new TimeSeries(name);
-//		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
-//			YearMonthDay yearMonthDay = entry.getKey();
-//			DiffStat diffStat = entry.getValue();
-//			Day day = new Day(yearMonthDay.day(), yearMonthDay.month(), yearMonthDay.year());
-//			removedSeries.add(day, Integer.valueOf(-diffStat.removed()));    
-//		}
-//		dataset.addSeries(removedSeries);
+		TimeSeries removedSeries = new TimeSeries(name);
+		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
+			YearMonthDay yearMonthDay = entry.getKey();
+			DiffStat diffStat = entry.getValue();
+			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
+			removedSeries.add(day, Integer.valueOf(-diffStat.removed()));    
+		}
+		dataset.addSeries(removedSeries);
 
 
 		return dataset;
@@ -294,7 +297,7 @@ public class DiffStatGenerator {
 		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month(), yearMonthDay.year());
+			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
 			total += diffStat.delta();
 			totalSeries.add(day, Integer.valueOf(total));    
 		}
