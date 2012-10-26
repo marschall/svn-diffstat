@@ -170,18 +170,9 @@ public class DiffStatGenerator {
         Font helvetica = new Font("Helvetica", Font.PLAIN, 11);
 		
 		XYDataset dataset = createDeltaDataset("Additions and Delections", aggregatedDiffstats);
-		JFreeChart chart = ChartFactory.createTimeSeriesChart(
-	            "", 
-	            "", 
-	            "",
-	            dataset, 
-	            legend, 
-	            tooltips, 
-	            urls
-	        );
+		JFreeChart chart = ChartFactory.createTimeSeriesChart("", "", "", dataset, legend, tooltips, urls);
 		
 		chart.setBackgroundPaint(WHITE);
-		
 		chart.setBorderVisible(false);
 		
 		XYPlot plot = chart.getXYPlot();
@@ -192,19 +183,20 @@ public class DiffStatGenerator {
         plot.setDomainGridlineStroke(new BasicStroke(1.0f));
         plot.setRangeGridlinesVisible(false);
         
+        plot.setOutlineVisible(false);
+        
         DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
         domainAxis.setDateFormatOverride(new SimpleDateFormat("MM/yy"));
         domainAxis.setTickLabelFont(helvetica);
 
         NumberAxis additionDeletionAxis = (NumberAxis) plot.getRangeAxis(0);
-        additionDeletionAxis.setLabel("Additions and Delections");
+        additionDeletionAxis.setLabel("Additions and Deletions");
         additionDeletionAxis.setLabelFont(helvetica);
         additionDeletionAxis.setTickLabelFont(helvetica);
         additionDeletionAxis.setRangeType(RangeType.FULL);
         additionDeletionAxis.setLowerBound(minimum(aggregatedDiffstats));
         additionDeletionAxis.setUpperBound(maximum(aggregatedDiffstats));
-//        additionDeletionAxis.setAutoRange(true);
-//        additionDeletionAxis.setAutoRangeIncludesZero(false);
+        additionDeletionAxis.setNumberFormatOverride(new AbbreviatingNumberFormat());
         
         XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
         areaRenderer.setOutline(true);
@@ -216,30 +208,21 @@ public class DiffStatGenerator {
         areaRenderer.setSeriesPaint(1, REMOVED_FILL);
 		plot.setRenderer(0, areaRenderer);
 		
-//		// make total dashed
-//		StandardXYItemRenderer lineRenderer = new StandardXYItemRenderer(StandardXYItemRenderer.LINES);
-//		lineRenderer.setSeriesStroke(0, new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 6.5f));
-//		plot.setRenderer(1, lineRenderer);
-		
-//        CategoryPlot categoryPlot = (CategoryPlot) chart.getPlot();
-//        categoryPlot.setRenderer(0, renderer);
-        // ???
-        // ((NumberAxis) plot.getRangeAxis()).setAutoRangeIncludesZero(true);
-		
-		// AXIS 2
+		// Total Axix 2
         NumberAxis totalAxis = new NumberAxis("Total Lines");
-//        axis2.setFixedDimension(10.0);
-//        axis2.setAutoRangeIncludesZero(false);
+//        totalAxis.setFixedDimension(10.0);
         totalAxis.setLabelPaint(VALUE_LABEL);
         totalAxis.setTickLabelPaint(DARK_BLUE);
         totalAxis.setLabelFont(helvetica);
         totalAxis.setTickLabelFont(helvetica);
+        totalAxis.setNumberFormatOverride(new AbbreviatingNumberFormat());
         plot.setRangeAxis(1, totalAxis);
         plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
         
         XYDataset totalDataSet = createTotalDataset("Total Lines", aggregatedDiffstats);
 		plot.setDataset(1, totalDataSet);
         plot.mapDatasetToRangeAxis(1, 1);
+//        XYItemRenderer totalRenderer = new XYSplineRenderer();
         XYItemRenderer totalRenderer = new StandardXYItemRenderer();
         totalRenderer.setSeriesPaint(0, LIGHT_BLUE);
         totalRenderer.setSeriesStroke(0, new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10.0f, new float[]{6.5f} , 0.0f));

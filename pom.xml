@@ -38,6 +38,12 @@
       <artifactId>svnkit</artifactId>
       <version>1.7.5</version>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit-dep</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 
