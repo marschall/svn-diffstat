@@ -6,7 +6,6 @@ import static java.lang.Math.min;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Font;
 import java.io.File;
 import java.io.OutputStream;
@@ -47,7 +46,6 @@ import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNProperties;
-import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.wc.ISVNDiffGenerator;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
@@ -71,18 +69,24 @@ public class DiffStatGenerator {
 		System.out.println("!!!current user directory must be working copy!!!");
 		FSRepositoryFactory.setup();
 		
+//		Set<String> includedFiles = new HashSet<>(Arrays.asList("java", "xml"));
+		Set<String> includedFiles = Collections.singleton("java");
+		File workingCopy = new File("").getAbsoluteFile();
+		DiffStatConfiguration configuration = new DiffStatConfiguration("marschall", includedFiles, workingCopy);
+		run(configuration);
+	}
+	
+	private static void run(DiffStatConfiguration configuration) throws SVNException {
 		long start = System.currentTimeMillis();
 		SVNClientManager clientManager = SVNClientManager.newInstance();
-//		File workingCopy = new File("/Users/marschall/Documents/workspaces/default/memoryfilesystem-workingcopy");
-		File workingCopy = new File("").getAbsoluteFile();
 		
-		List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, workingCopy);
+		List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, configuration);
 		long end = System.currentTimeMillis();
 		
 		System.out.printf("%n parsed: %d revisions is %d s%n", coordinates.size(), (end - start) / 1000);
 		
 		
-		Map<Long, DiffStat> diffStats = getDiffStats(clientManager, workingCopy, coordinates);
+		Map<Long, DiffStat> diffStats = getDiffStats(clientManager, coordinates, configuration);
 		System.out.println(diffStats.size() + " diff stats");
 		
 		DiffStat total = new DiffStat(0, 0);
@@ -95,6 +99,7 @@ public class DiffStatGenerator {
 		
 		JFreeChart chart = createChart(aggregatedDiffstats);
 		displayChard(chart);
+		
 	}
 	
 	private static SortedMap<YearMonthDay, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
@@ -128,33 +133,32 @@ public class DiffStatGenerator {
 		return revisionToDateMap;
 	}
 	
-	private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, File workingCopy) throws SVNException {
+	private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration) throws SVNException {
 //		SVNURL repoUrl = SVNURL.parseURIEncoded("file:///Users/marschall/svn/memoryfilesystem");
 		boolean stopOnCopy = true;
 		boolean discoverChangedPaths = false;
 		SVNRevision startRevision = SVNRevision.create(1L);
 		SVNRevision endRevision = SVNRevision.HEAD;
-		String author = "marschall";
 
-		File[] paths = new File[]{workingCopy};
-		RevisionCollector logHandler = new RevisionCollector(author);
+		File[] paths = new File[]{configuration.getWorkingCopy()};
+		RevisionCollector logHandler = new RevisionCollector(configuration.getAuthor());
 		long limit = Long.MAX_VALUE;
 		clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
 				limit, logHandler);
 		return logHandler.getCoordinates();
 	}
 	
-	private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, File workingCopy, List<CommitCoordinate> coordinates) throws SVNException {
+	private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, List<CommitCoordinate> coordinates, DiffStatConfiguration configuration) throws SVNException {
 		SVNDiffClient diffClient = clientManager.getDiffClient();
-//		Set<String> includedFiles = new HashSet<>(Arrays.asList("java", "xml"));
-		Set<String> includedFiles = Collections.singleton("java");
-		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(), includedFiles);
+
+		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(), configuration.getIncludedFiles());
 		diffClient.setDiffGenerator(diffGenerator);
 		SVNDepth depth = SVNDepth.INFINITY;
 		boolean useAncestry = true;
 //		diffClient.setGitDiffFormat(true);
 		Collection<String> changeLists = null;
 		OutputStream result = new ResetOutStream();
+		File workingCopy = configuration.getWorkingCopy();
 		for (CommitCoordinate coordinate : coordinates) {
 			long revision = coordinate.getRevision();
 			SVNRevision newRevision = SVNRevision.create(revision);
@@ -514,35 +518,6 @@ public class DiffStatGenerator {
 		public void displayAddedDirectory(String path, String rev1, String rev2) throws SVNException {
 		}
 
-		
-	}
-	
-	static final class LongList {
-		
-		private int size;
-		private long[] data;
-		
-		LongList() {
-			this(16);
-		}
-		
-		LongList(int initialSize) {
-			this.size = 0;
-			this.data = new long[initialSize];
-		}
-		
-		void add(long l) {
-			if (this.size == this.data.length) {
-				long[] newData = new long[this.size * 2];
-				System.arraycopy(this.data, 0, newData, 0, this.size);
-				this.data = newData;
-			}
-			this.data[this.size++] = l;
-		}
-		
-		int size() {
-			return this.size;
-		}
 		
 	}
 	
