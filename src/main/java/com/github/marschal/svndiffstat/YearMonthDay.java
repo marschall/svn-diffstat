@@ -18,7 +18,20 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 	static YearMonthDay fromDate(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
+		return fromCalendar(calendar);
+	}
+
+	private static YearMonthDay fromCalendar(Calendar calendar) {
 		return new YearMonthDay(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+	}
+	
+	YearMonthDay previous() {
+		Calendar calendar = Calendar.getInstance();
+		calendar.set(Calendar.YEAR, this.year);
+		calendar.set(Calendar.MONTH, this.month);
+		calendar.set(Calendar.DAY_OF_MONTH, this.day);
+		calendar.roll(Calendar.DAY_OF_MONTH, false);
+		return fromCalendar(calendar);
 	}
 	
 	int year() {

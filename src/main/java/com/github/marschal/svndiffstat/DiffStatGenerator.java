@@ -6,8 +6,10 @@ import static java.lang.Math.min;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.io.File;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +29,7 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.AxisLocation;
+import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
@@ -118,8 +121,10 @@ public class DiffStatGenerator {
 			YearMonthDay yearMonthDay = YearMonthDay.fromDate(date);
 			revisionToDateMap.put(revision, yearMonthDay);
 		}
+		YearMonthDay fakeStart = YearMonthDay.fromDate(coordinates.get(0).getDate()).previous();
 		
 		SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats = new TreeMap<>();
+		aggregatedDiffstats.put(fakeStart, new DiffStat(0, 0));
 		for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
 			Long revision = entry.getKey();
 			YearMonthDay yearMonthDay = revisionToDateMap.get(revision);
@@ -162,6 +167,7 @@ public class DiffStatGenerator {
 		boolean legend = false;
         boolean tooltips = false;
         boolean urls = false;
+        Font helvetica = new Font("Helvetica", Font.PLAIN, 11);
 		
 		XYDataset dataset = createDeltaDataset("Additions and Delections", aggregatedDiffstats);
 		JFreeChart chart = ChartFactory.createTimeSeriesChart(
@@ -185,17 +191,32 @@ public class DiffStatGenerator {
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
         plot.setDomainGridlineStroke(new BasicStroke(1.0f));
         plot.setRangeGridlinesVisible(false);
+        
+        DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
+        domainAxis.setDateFormatOverride(new SimpleDateFormat("MM/yy"));
+        domainAxis.setTickLabelFont(helvetica);
 
-        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis(0);
-        rangeAxis.setLabel("Additions and Delections");
-        rangeAxis.setRangeType(RangeType.FULL);
+        NumberAxis additionDeletionAxis = (NumberAxis) plot.getRangeAxis(0);
+        additionDeletionAxis.setLabel("Additions and Delections");
+        additionDeletionAxis.setLabelFont(helvetica);
+        additionDeletionAxis.setTickLabelFont(helvetica);
+        additionDeletionAxis.setRangeType(RangeType.FULL);
 //        rangeAxis.setAutoRangeMinimumSize(minimum(aggregatedDiffstats));
 //        rangeAxis.setAutoRange(true);
 //        rangeAxis.setAutoRangeIncludesZero(false);
         
-        XYAreaRenderer renderer = new XYAreaRenderer(XYAreaRenderer.AREA);
-        renderer.setOutline(true);
-		plot.setRenderer(renderer);
+        XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
+        areaRenderer.setOutline(true);
+//        areaRenderer.setSeriesFillPaint(0, Color.cyan);
+        areaRenderer.setSeriesOutlinePaint(0, ADDED_STROKE);
+        areaRenderer.setSeriesOutlineStroke(0, new BasicStroke(1.5f));
+        areaRenderer.setSeriesPaint(0, ADDED_FILL);
+		plot.setRenderer(0, areaRenderer);
+		
+//		// make total dashed
+//		StandardXYItemRenderer lineRenderer = new StandardXYItemRenderer(StandardXYItemRenderer.LINES);
+//		lineRenderer.setSeriesStroke(0, new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 6.5f));
+//		plot.setRenderer(1, lineRenderer);
 		
 //        CategoryPlot categoryPlot = (CategoryPlot) chart.getPlot();
 //        categoryPlot.setRenderer(0, renderer);
@@ -208,14 +229,17 @@ public class DiffStatGenerator {
 //        axis2.setAutoRangeIncludesZero(false);
         totalAxis.setLabelPaint(VALUE_LABEL);
         totalAxis.setTickLabelPaint(DARK_BLUE);
+        totalAxis.setLabelFont(helvetica);
+        totalAxis.setTickLabelFont(helvetica);
         plot.setRangeAxis(1, totalAxis);
         plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
         
-        XYDataset dataset2 = createTotalDataset("Total Lines", aggregatedDiffstats);
-		plot.setDataset(1, dataset2);
+        XYDataset totalDataSet = createTotalDataset("Total Lines", aggregatedDiffstats);
+		plot.setDataset(1, totalDataSet);
         plot.mapDatasetToRangeAxis(1, 1);
         XYItemRenderer totalRenderer = new StandardXYItemRenderer();
         totalRenderer.setSeriesPaint(0, LIGHT_BLUE);
+        totalRenderer.setSeriesStroke(0, new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10.0f, new float[]{6.5f} , 0.0f));
         plot.setRenderer(1, totalRenderer);
 		
         return chart;
@@ -245,7 +269,7 @@ public class DiffStatGenerator {
 		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month(), yearMonthDay.year());
+			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
 			addedSeries.add(day, Integer.valueOf(diffStat.added()));    
 		}
 		dataset.addSeries(addedSeries);
