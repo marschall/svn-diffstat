@@ -55,16 +55,6 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
 
 public class DiffStatGenerator {
 	
-	static final Color DATE_LABEL = new Color(0x33, 0x33, 0x33);
-	static final Color VALUE_LABEL = new Color(0x88, 0x88, 0x88);
-	static final Color DARK_BLUE = new Color(0x04, 0x7D, 0xDA);
-	static final Color LIGHT_BLUE = new Color(0x04, 0x7D, 0xDA, 127); // also label
-	static final Color DARK_GREY = new Color(0x33, 0x33, 0x33);
-	static final Color ADDED_FILL = new Color(0x1D, 0xB3, 0x4F, 127); // also label
-	static final Color ADDED_STROKE = new Color(0x1D, 0xB3, 0x4F);
-	static final Color REMOVED_FILL = new Color(0xAD, 0x10, 0x17, 127);  // also label
-	static final Color REMOVED_STROKE = new Color(0xAD, 0x10, 0x17);
-
 	public static void main(String[] args) throws SVNException {
 		System.out.println("!!!current user directory must be working copy!!!");
 		FSRepositoryFactory.setup();
@@ -73,33 +63,28 @@ public class DiffStatGenerator {
 		Set<String> includedFiles = Collections.singleton("java");
 		File workingCopy = new File("").getAbsoluteFile();
 		DiffStatConfiguration configuration = new DiffStatConfiguration("marschall", includedFiles, workingCopy);
-		run(configuration);
+		ProgressReporter reporter = new ProgressReporter(System.out);
+		SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats = run(configuration, reporter);
+		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats);
+		ChartBuilder.displayChard(chart);
 	}
 	
-	private static void run(DiffStatConfiguration configuration) throws SVNException {
-		long start = System.currentTimeMillis();
+	private static SortedMap<YearMonthDay,DiffStat> run(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
-		List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, configuration);
-		long end = System.currentTimeMillis();
+		reporter.startRevisionLogging();
+		List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, configuration, reporter);
+		reporter.revisionLoggingDone(coordinates);
 		
-		System.out.printf("%n parsed: %d revisions is %d s%n", coordinates.size(), (end - start) / 1000);
+		reporter.startRevisionParsing();
+		Map<Long, DiffStat> diffStats = getDiffStats(clientManager, coordinates, configuration, reporter);
+		reporter.revisionParsinDone(diffStats);
 		
-		
-		Map<Long, DiffStat> diffStats = getDiffStats(clientManager, coordinates, configuration);
-		System.out.println(diffStats.size() + " diff stats");
-		
-		DiffStat total = new DiffStat(0, 0);
-		for (DiffStat diffStat : diffStats.values()) {
-			total.add(diffStat);
-		}
-		System.out.println("total: " + total);
-		
+		reporter.startAggregation();
 		SortedMap<YearMonthDay,DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
+		reporter.aggregationDone(aggregatedDiffstats);
 		
-		JFreeChart chart = createChart(aggregatedDiffstats);
-		displayChard(chart);
-		
+		return aggregatedDiffstats;
 	}
 	
 	private static SortedMap<YearMonthDay, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
@@ -133,7 +118,7 @@ public class DiffStatGenerator {
 		return revisionToDateMap;
 	}
 	
-	private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration) throws SVNException {
+	private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 //		SVNURL repoUrl = SVNURL.parseURIEncoded("file:///Users/marschall/svn/memoryfilesystem");
 		boolean stopOnCopy = true;
 		boolean discoverChangedPaths = false;
@@ -141,17 +126,17 @@ public class DiffStatGenerator {
 		SVNRevision endRevision = SVNRevision.HEAD;
 
 		File[] paths = new File[]{configuration.getWorkingCopy()};
-		RevisionCollector logHandler = new RevisionCollector(configuration.getAuthor());
+		RevisionCollector logHandler = new RevisionCollector(configuration.getAuthor(), reporter);
 		long limit = Long.MAX_VALUE;
 		clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
 				limit, logHandler);
 		return logHandler.getCoordinates();
 	}
 	
-	private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, List<CommitCoordinate> coordinates, DiffStatConfiguration configuration) throws SVNException {
+	private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, List<CommitCoordinate> coordinates, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 		SVNDiffClient diffClient = clientManager.getDiffClient();
 
-		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(), configuration.getIncludedFiles());
+		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(), configuration.getIncludedFiles(), reporter);
 		diffClient.setDiffGenerator(diffGenerator);
 		SVNDepth depth = SVNDepth.INFINITY;
 		boolean useAncestry = true;
@@ -168,177 +153,31 @@ public class DiffStatGenerator {
 		
 		return diffGenerator.getDiffStats();
 	}
-	
-	private static void displayChard(final JFreeChart chart) {
-        
-        SwingUtilities.invokeLater(new Runnable() {
-			
-			@Override
-			public void run() {
-				ChartPanel chartPanel = new ChartPanel(chart);
-				java.awt.Dimension dimension = new java.awt.Dimension(1200, 600);
-				chartPanel.setPreferredSize(dimension);
-				chartPanel.setDomainZoomable(true);
-				chartPanel.setRangeZoomable(true);
-				
-				JFrame frame = new JFrame("diff-stat");
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-				frame.setContentPane(chartPanel);
-				frame.pack();
-				frame.setVisible(true);
-			}
-		});
-	}
-	
-	private static JFreeChart createChart(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-		
-		boolean legend = false;
-        boolean tooltips = false;
-        boolean urls = false;
-        Font helvetica = new Font("Helvetica", Font.PLAIN, 11);
-		
-		XYDataset dataset = createDeltaDataset("Additions and Delections", aggregatedDiffstats);
-		JFreeChart chart = ChartFactory.createTimeSeriesChart("", "", "", dataset, legend, tooltips, urls);
-		
-		chart.setBackgroundPaint(WHITE);
-		chart.setBorderVisible(false);
-		
-		XYPlot plot = chart.getXYPlot();
-        plot.setOrientation(PlotOrientation.VERTICAL);
-        plot.setBackgroundPaint(WHITE);
-        plot.setDomainGridlinesVisible(true);
-        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
-        plot.setDomainGridlineStroke(new BasicStroke(1.0f));
-        plot.setRangeGridlinesVisible(false);
-        
-        plot.setOutlineVisible(false);
-        
-        DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
-        domainAxis.setDateFormatOverride(new SimpleDateFormat("MM/yy"));
-        domainAxis.setTickLabelFont(helvetica);
 
-        NumberAxis additionDeletionAxis = (NumberAxis) plot.getRangeAxis(0);
-        additionDeletionAxis.setLabel("Additions and Deletions");
-        additionDeletionAxis.setLabelFont(helvetica);
-        additionDeletionAxis.setTickLabelFont(helvetica);
-        additionDeletionAxis.setRangeType(RangeType.FULL);
-        additionDeletionAxis.setLowerBound(minimum(aggregatedDiffstats));
-        additionDeletionAxis.setUpperBound(maximum(aggregatedDiffstats));
-        additionDeletionAxis.setNumberFormatOverride(new AbbreviatingNumberFormat());
-        
-        XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
-        areaRenderer.setOutline(true);
-        areaRenderer.setSeriesOutlinePaint(0, ADDED_STROKE);
-        areaRenderer.setSeriesOutlineStroke(0, new BasicStroke(1.5f));
-        areaRenderer.setSeriesPaint(0, ADDED_FILL);
-        areaRenderer.setSeriesOutlinePaint(1, REMOVED_STROKE);
-        areaRenderer.setSeriesOutlineStroke(1, new BasicStroke(1.5f));
-        areaRenderer.setSeriesPaint(1, REMOVED_FILL);
-		plot.setRenderer(0, areaRenderer);
-		
-		// Total Axix 2
-        NumberAxis totalAxis = new NumberAxis("Total Lines");
-//        totalAxis.setFixedDimension(10.0);
-        totalAxis.setLabelPaint(VALUE_LABEL);
-        totalAxis.setTickLabelPaint(DARK_BLUE);
-        totalAxis.setLabelFont(helvetica);
-        totalAxis.setTickLabelFont(helvetica);
-        totalAxis.setNumberFormatOverride(new AbbreviatingNumberFormat());
-        plot.setRangeAxis(1, totalAxis);
-        plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
-        
-        XYDataset totalDataSet = createTotalDataset("Total Lines", aggregatedDiffstats);
-		plot.setDataset(1, totalDataSet);
-        plot.mapDatasetToRangeAxis(1, 1);
-//        XYItemRenderer totalRenderer = new XYSplineRenderer();
-        XYItemRenderer totalRenderer = new StandardXYItemRenderer();
-        totalRenderer.setSeriesPaint(0, LIGHT_BLUE);
-        totalRenderer.setSeriesStroke(0, new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10.0f, new float[]{6.5f} , 0.0f));
-        plot.setRenderer(1, totalRenderer);
-		
-        return chart;
-	}
-	
-	private static int minimum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-		int minimum = Integer.MAX_VALUE;
-		for (DiffStat diffStat : aggregatedDiffstats.values()) {
-			minimum = min(minimum, -diffStat.removed());
-		}
-		return minimum + (int) (minimum * 0.10);
-	}
-	
-	private static int maximum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-		int maximum = Integer.MIN_VALUE;
-		for (DiffStat diffStat : aggregatedDiffstats.values()) {
-			maximum = max(maximum, diffStat.added());
-		}
-		return maximum + (int) (maximum * 0.10);
-	}
-	
-	private static XYDataset createDeltaDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-
-		TimeSeriesCollection dataset = new TimeSeriesCollection();
-		
-		TimeSeries addedSeries = new TimeSeries(name);
-		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
-			YearMonthDay yearMonthDay = entry.getKey();
-			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
-			addedSeries.add(day, Integer.valueOf(diffStat.added()));    
-		}
-		dataset.addSeries(addedSeries);
-		
-		TimeSeries removedSeries = new TimeSeries(name);
-		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
-			YearMonthDay yearMonthDay = entry.getKey();
-			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
-			removedSeries.add(day, Integer.valueOf(-diffStat.removed()));    
-		}
-		dataset.addSeries(removedSeries);
-
-
-		return dataset;
-	}
-	
-	private static XYDataset createTotalDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-		int total = 0;
-		
-		TimeSeries totalSeries = new TimeSeries(name);
-		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
-			YearMonthDay yearMonthDay = entry.getKey();
-			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
-			total += diffStat.delta();
-			totalSeries.add(day, Integer.valueOf(total));    
-		}
-		
-		TimeSeriesCollection dataset = new TimeSeriesCollection();
-		dataset.addSeries(totalSeries);
-		
-		return dataset;
-	}
 	
 	static final class RevisionCollector implements ISVNLogEntryHandler {
 		
 		private final String author;
 		private final List<CommitCoordinate> coordinates;
+		private final ProgressReporter reporter;
 		
-		RevisionCollector(String author) {
+		RevisionCollector(String author, ProgressReporter reporter) {
 			this.author = author;
+			this.reporter = reporter;
 			this.coordinates = new ArrayList<>();
 		}
 
 
 		@Override
 		public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
+			long revision = logEntry.getRevision();
 			String logEntryAuthor = logEntry.getAuthor();
 			if (this.author.equals(logEntryAuthor)) {
-				long revision = logEntry.getRevision();
 				Date date = logEntry.getDate();
 				CommitCoordinate coordinate = new CommitCoordinate(revision, date);
 				this.coordinates.add(coordinate);
 			}
+			reporter.revisionLogged(revision);
 			
 		}
 		
@@ -353,10 +192,12 @@ public class DiffStatGenerator {
 		private final ISVNDiffGenerator delegate;
 		private final Map<Long, DiffStat> diffStats;
 		private final Set<String> includedFileExtensions;
+		private final ProgressReporter reporter;
 		
-		DiffStatDiffGenerator(ISVNDiffGenerator delegate, Set<String> includedFileExtensions) {
+		DiffStatDiffGenerator(ISVNDiffGenerator delegate, Set<String> includedFileExtensions, ProgressReporter reporter) {
 			this.delegate = delegate;
 			this.includedFileExtensions = includedFileExtensions;
+			this.reporter = reporter;
 			this.diffStats = new HashMap<>();
 		}
 		
@@ -460,14 +301,15 @@ public class DiffStatGenerator {
 
 		@Override
 		public void displayFileDiff(String path, File file1, File file2, String rev1, String rev2, String mimeType1, String mimeType2, OutputStream result) throws SVNException {
+			long newRevision = Long.parseLong(rev2.substring("(revision ".length(), rev2.length() - 1));
 			if (this.considerFile(path)) {
 				ResetOutStream resetOutStream = (ResetOutStream) result;
 				resetOutStream.initialize();
 				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
-				long newRevision = Long.parseLong(rev2.substring("(revision ".length(), rev2.length() - 1));
 				DiffStat diffStat = resetOutStream.finish();
 				this.addDiffStat(newRevision, diffStat);
 			}
+			reporter.revisionParsed(newRevision);
 		}
 		
 		private void addDiffStat(Long revision, DiffStat diffStat) {
@@ -518,26 +360,6 @@ public class DiffStatGenerator {
 		public void displayAddedDirectory(String path, String rev1, String rev2) throws SVNException {
 		}
 
-		
-	}
-	
-	static final class CommitCoordinate {
-
-		private final long revision;
-		private final Date date;
-
-		CommitCoordinate(long revision, Date date) {
-			this.revision = revision;
-			this.date = date;
-		}
-		
-		long getRevision() {
-			return revision;
-		}
-		
-		Date getDate() {
-			return date;
-		}
 		
 	}
 
