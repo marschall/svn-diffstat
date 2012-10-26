@@ -5,12 +5,15 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.awt.BasicStroke;
+import static java.awt.BasicStroke.CAP_ROUND;
+import static java.awt.BasicStroke.JOIN_ROUND;
 import java.awt.Color;
 import java.awt.Font;
 import java.text.SimpleDateFormat;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 
+import javax.naming.spi.DirStateFactory;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -64,12 +67,12 @@ final class ChartBuilder {
 		});
 	}
 	
-	static JFreeChart createChart(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+	static JFreeChart createChart(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats, DiffStatConfiguration configuration) {
 		
 		boolean legend = false;
         boolean tooltips = false;
         boolean urls = false;
-        Font helvetica = new Font("Helvetica", Font.PLAIN, 11);
+        Font helvetica = new Font("Helvetica", Font.PLAIN, 11 * configuration.multiplierInt());
 		
 		XYDataset dataset = createDeltaDataset("Additions and Delections", aggregatedDiffstats);
 		JFreeChart chart = ChartFactory.createTimeSeriesChart("", "", "", dataset, legend, tooltips, urls);
@@ -77,12 +80,14 @@ final class ChartBuilder {
 		chart.setBackgroundPaint(WHITE);
 		chart.setBorderVisible(false);
 		
+		float strokeWidth = 1.5f * configuration.multiplierFloat();
+		
 		XYPlot plot = chart.getXYPlot();
         plot.setOrientation(PlotOrientation.VERTICAL);
         plot.setBackgroundPaint(WHITE);
         plot.setDomainGridlinesVisible(true);
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
-        plot.setDomainGridlineStroke(new BasicStroke(1.0f));
+        plot.setDomainGridlineStroke(new BasicStroke(1.0f * configuration.multiplierFloat()));
         plot.setRangeGridlinesVisible(false);
         
         plot.setOutlineVisible(false);
@@ -103,10 +108,10 @@ final class ChartBuilder {
         XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
         areaRenderer.setOutline(true);
         areaRenderer.setSeriesOutlinePaint(0, ADDED_STROKE);
-        areaRenderer.setSeriesOutlineStroke(0, new BasicStroke(1.5f));
+        areaRenderer.setSeriesOutlineStroke(0, new BasicStroke(strokeWidth));
         areaRenderer.setSeriesPaint(0, ADDED_FILL);
         areaRenderer.setSeriesOutlinePaint(1, REMOVED_STROKE);
-        areaRenderer.setSeriesOutlineStroke(1, new BasicStroke(1.5f));
+        areaRenderer.setSeriesOutlineStroke(1, new BasicStroke(strokeWidth));
         areaRenderer.setSeriesPaint(1, REMOVED_FILL);
 		plot.setRenderer(0, areaRenderer);
 		
@@ -127,7 +132,8 @@ final class ChartBuilder {
 //        XYItemRenderer totalRenderer = new XYSplineRenderer();
         XYItemRenderer totalRenderer = new StandardXYItemRenderer();
         totalRenderer.setSeriesPaint(0, LIGHT_BLUE);
-        totalRenderer.setSeriesStroke(0, new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10.0f, new float[]{6.5f} , 0.0f));
+        totalRenderer.setSeriesStroke(0, new BasicStroke(strokeWidth, CAP_ROUND, JOIN_ROUND,
+        		10.0f * configuration.multiplierFloat(), new float[]{6.5f * configuration.multiplierFloat()} , 0.0f));
         plot.setRenderer(1, totalRenderer);
 		
         return chart;

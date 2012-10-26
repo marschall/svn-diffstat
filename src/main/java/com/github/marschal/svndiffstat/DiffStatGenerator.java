@@ -45,7 +45,7 @@ public class DiffStatGenerator {
 		Path savePath = Paths.get("/Users/marschall/tmp/diffstat.png");
 		String author = "marschall";
 		
-		DiffStatConfiguration configuration = new DiffStatConfiguration(author, includedFiles, workingCopy, dimension, savePath);
+		DiffStatConfiguration configuration = new DiffStatConfiguration(author, includedFiles, workingCopy, dimension, savePath, true);
 		ProgressReporter reporter = new ProgressReporter(System.out);
 		SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats = getData(configuration, reporter);
 		
@@ -53,11 +53,11 @@ public class DiffStatGenerator {
 	}
 
 	private static void saveAndDisplayChart(DiffStatConfiguration configuration, SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats) throws IOException {
-		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats);
+		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats, configuration);
 		Path savePath = configuration.getSavePath();
 		if (savePath != null) {
 			Dimension dimension = configuration.getDimension();
-			ChartUtilities.saveChartAsPNG(savePath.toFile(), chart, dimension.width, dimension.height);
+			ChartUtilities.saveChartAsPNG(savePath.toFile(), chart, dimension.width * configuration.multiplierInt(), dimension.height * configuration.multiplierInt());
 		} else {
 			ChartBuilder.displayChard(chart, configuration);
 		}

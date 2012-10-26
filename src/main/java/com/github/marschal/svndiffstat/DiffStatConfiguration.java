@@ -11,14 +11,16 @@ final class DiffStatConfiguration {
 	private final Set<String> includedFiles;
 	private final File workingCopy;
 	private final Dimension dimension;
-	private Path savePath;
+	private final Path savePath;
+	private final boolean doubleSize;
 	
-	DiffStatConfiguration(String author, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath) {
+	DiffStatConfiguration(String author, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize) {
 		this.author = author;
 		this.includedFiles = includedFiles;
 		this.workingCopy = workingCopy;
 		this.dimension = dimension;
 		this.savePath = savePath;
+		this.doubleSize = doubleSize;
 	}
 	
 	String getAuthor() {
@@ -39,6 +41,22 @@ final class DiffStatConfiguration {
 	
 	Path getSavePath() {
 		return this.savePath;
+	}
+	
+	int multiplierInt() {
+		return this.doubleSize ? 2 : 1;
+	}
+	
+	double multiplierDouble() {
+		return this.doubleSize ? 2.0d : 1.0d;
+	}
+	
+	float multiplierFloat() {
+		return this.doubleSize ? 2.0f : 1.0f;
+	}
+	
+	boolean isDoubleSize() {
+		return this.doubleSize;
 	}
 	
 
