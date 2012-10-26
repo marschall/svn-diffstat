@@ -1,15 +1,13 @@
 package com.github.marschal.svndiffstat;
 
-import static java.awt.Color.WHITE;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Font;
+import java.awt.Dimension;
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,25 +20,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.AxisLocation;
-import org.jfree.chart.axis.DateAxis;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
-import org.jfree.chart.renderer.xy.XYAreaRenderer;
-import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.data.RangeType;
-import org.jfree.data.time.Day;
-import org.jfree.data.time.TimeSeries;
-import org.jfree.data.time.TimeSeriesCollection;
-import org.jfree.data.xy.XYDataset;
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
@@ -55,21 +36,37 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
 
 public class DiffStatGenerator {
 	
-	public static void main(String[] args) throws SVNException {
+	public static void main(String[] args) throws SVNException, IOException {
 		System.out.println("!!!current user directory must be working copy!!!");
 		FSRepositoryFactory.setup();
 		
 //		Set<String> includedFiles = new HashSet<>(Arrays.asList("java", "xml"));
 		Set<String> includedFiles = Collections.singleton("java");
 		File workingCopy = new File("").getAbsoluteFile();
-		DiffStatConfiguration configuration = new DiffStatConfiguration("marschall", includedFiles, workingCopy);
+		Dimension dimension = new Dimension(1200, 600);
+		Path savePath = Paths.get("/Users/marschall/tmp/diffstat.png");
+		String author = "marschall";
+		
+		DiffStatConfiguration configuration = new DiffStatConfiguration(author, includedFiles, workingCopy, dimension, savePath);
 		ProgressReporter reporter = new ProgressReporter(System.out);
-		SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats = run(configuration, reporter);
+		SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats = getData(configuration, reporter);
+		
+		saveAndDisplayChart(configuration, aggregatedDiffStats);
+	}
+
+	private static void saveAndDisplayChart(DiffStatConfiguration configuration, SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats) throws IOException {
 		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats);
-		ChartBuilder.displayChard(chart);
+		Path savePath = configuration.getSavePath();
+		if (savePath != null) {
+			Dimension dimension = configuration.getDimension();
+			ChartUtilities.saveChartAsPNG(savePath.toFile(), chart, dimension.width, dimension.height);
+		} else {
+			ChartBuilder.displayChard(chart, configuration);
+		}
+		
 	}
 	
-	private static SortedMap<YearMonthDay,DiffStat> run(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+	private static SortedMap<YearMonthDay,DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
 		reporter.startRevisionLogging();

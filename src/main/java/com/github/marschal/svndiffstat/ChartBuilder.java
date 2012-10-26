@@ -8,8 +8,8 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.text.SimpleDateFormat;
-import java.util.SortedMap;
 import java.util.Map.Entry;
+import java.util.SortedMap;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -44,15 +44,14 @@ final class ChartBuilder {
 	static final Color REMOVED_STROKE = new Color(0xAD, 0x10, 0x17);
 	
 	
-	static void displayChard(final JFreeChart chart) {
+	static void displayChard(final JFreeChart chart, final DiffStatConfiguration configuration) {
         
         SwingUtilities.invokeLater(new Runnable() {
 			
 			@Override
 			public void run() {
 				ChartPanel chartPanel = new ChartPanel(chart);
-				java.awt.Dimension dimension = new java.awt.Dimension(1200, 600);
-				chartPanel.setPreferredSize(dimension);
+				chartPanel.setPreferredSize(configuration.getDimension());
 				chartPanel.setDomainZoomable(true);
 				chartPanel.setRangeZoomable(true);
 				
