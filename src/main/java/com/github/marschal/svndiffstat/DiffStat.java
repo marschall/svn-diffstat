@@ -20,4 +20,16 @@ final class DiffStat {
 		this.removed += other.removed;
 	}
 
+	int added() {
+		return this.added;
+	}
+	
+	int removed() {
+		return this.removed;
+	}
+	
+	int delta() {
+		return this.added - this.removed;
+	}
+
 }

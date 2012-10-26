@@ -1,5 +1,11 @@
 package com.github.marschal.svndiffstat;
 
+import static java.awt.Color.WHITE;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.io.File;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -14,6 +20,24 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.AxisLocation;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
+import org.jfree.chart.renderer.xy.XYAreaRenderer;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.data.RangeType;
+import org.jfree.data.time.Day;
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.xy.XYDataset;
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
@@ -28,6 +52,16 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
 
 
 public class DiffStatGenerator {
+	
+	static final Color DATE_LABEL = new Color(0x33, 0x33, 0x33);
+	static final Color VALUE_LABEL = new Color(0x88, 0x88, 0x88);
+	static final Color DARK_BLUE = new Color(0x04, 0x7D, 0xDA);
+	static final Color LIGHT_BLUE = new Color(0x04, 0x7D, 0xDA, 127); // also label
+	static final Color DARK_GREY = new Color(0x33, 0x33, 0x33);
+	static final Color ADDED_FILL = new Color(0x1D, 0xB3, 0x4F, 127); // also label
+	static final Color ADDED_STROKE = new Color(0x1D, 0xB3, 0x4F);
+	static final Color REMOVED_FILL = new Color(0xAD, 0x10, 0x17, 127);  // also label
+	static final Color REMOVED_STROKE = new Color(0xAD, 0x10, 0x17);
 
 	public static void main(String[] args) throws SVNException {
 		System.out.println("!!!current user directory must be working copy!!!");
@@ -98,7 +132,153 @@ public class DiffStatGenerator {
 			}
 		}
 		
-		System.out.println(aggregatedDiffstats);
+		JFreeChart chart = createChart(aggregatedDiffstats);
+		displayChard(chart);
+	}
+	
+	private static void displayChard(final JFreeChart chart) {
+        
+        SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				ChartPanel chartPanel = new ChartPanel(chart);
+				java.awt.Dimension dimension = new java.awt.Dimension(1200, 600);
+				chartPanel.setPreferredSize(dimension);
+				chartPanel.setDomainZoomable(true);
+				chartPanel.setRangeZoomable(true);
+				
+				JFrame frame = new JFrame("diff-stat");
+				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				frame.setContentPane(chartPanel);
+				frame.pack();
+				frame.setVisible(true);
+			}
+		});
+	}
+	
+	private static JFreeChart createChart(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+		
+		boolean legend = false;
+        boolean tooltips = false;
+        boolean urls = false;
+		
+		XYDataset dataset = createDeltaDataset("Additions and Delections", aggregatedDiffstats);
+		JFreeChart chart = ChartFactory.createTimeSeriesChart(
+	            "", 
+	            "", 
+	            "",
+	            dataset, 
+	            legend, 
+	            tooltips, 
+	            urls
+	        );
+		
+		chart.setBackgroundPaint(WHITE);
+		
+		chart.setBorderVisible(false);
+		
+		XYPlot plot = chart.getXYPlot();
+        plot.setOrientation(PlotOrientation.VERTICAL);
+        plot.setBackgroundPaint(WHITE);
+        plot.setDomainGridlinesVisible(true);
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+        plot.setDomainGridlineStroke(new BasicStroke(1.0f));
+        plot.setRangeGridlinesVisible(false);
+
+        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis(0);
+        rangeAxis.setLabel("Additions and Delections");
+        rangeAxis.setRangeType(RangeType.FULL);
+//        rangeAxis.setAutoRangeMinimumSize(minimum(aggregatedDiffstats));
+//        rangeAxis.setAutoRange(true);
+//        rangeAxis.setAutoRangeIncludesZero(false);
+        
+        XYAreaRenderer renderer = new XYAreaRenderer(XYAreaRenderer.AREA);
+        renderer.setOutline(true);
+		plot.setRenderer(renderer);
+		
+//        CategoryPlot categoryPlot = (CategoryPlot) chart.getPlot();
+//        categoryPlot.setRenderer(0, renderer);
+        // ???
+        // ((NumberAxis) plot.getRangeAxis()).setAutoRangeIncludesZero(true);
+		
+		// AXIS 2
+        NumberAxis totalAxis = new NumberAxis("Total Lines");
+//        axis2.setFixedDimension(10.0);
+//        axis2.setAutoRangeIncludesZero(false);
+        totalAxis.setLabelPaint(VALUE_LABEL);
+        totalAxis.setTickLabelPaint(DARK_BLUE);
+        plot.setRangeAxis(1, totalAxis);
+        plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
+        
+        XYDataset dataset2 = createTotalDataset("Total Lines", aggregatedDiffstats);
+		plot.setDataset(1, dataset2);
+        plot.mapDatasetToRangeAxis(1, 1);
+        XYItemRenderer totalRenderer = new StandardXYItemRenderer();
+        totalRenderer.setSeriesPaint(0, LIGHT_BLUE);
+        plot.setRenderer(1, totalRenderer);
+		
+        return chart;
+	}
+	
+	private static int minimum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+		int minimum = Integer.MAX_VALUE;
+		for (DiffStat diffStat : aggregatedDiffstats.values()) {
+			minimum = min(minimum, -diffStat.removed());
+		}
+		return minimum;
+	}
+	
+	private static int maximum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+		int maximum = Integer.MIN_VALUE;
+		for (DiffStat diffStat : aggregatedDiffstats.values()) {
+			maximum = max(maximum, diffStat.added());
+		}
+		return maximum;
+	}
+	
+	private static XYDataset createDeltaDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+
+		TimeSeriesCollection dataset = new TimeSeriesCollection();
+		
+		TimeSeries addedSeries = new TimeSeries(name);
+		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
+			YearMonthDay yearMonthDay = entry.getKey();
+			DiffStat diffStat = entry.getValue();
+			Day day = new Day(yearMonthDay.day(), yearMonthDay.month(), yearMonthDay.year());
+			addedSeries.add(day, Integer.valueOf(diffStat.added()));    
+		}
+		dataset.addSeries(addedSeries);
+		
+//		TimeSeries removedSeries = new TimeSeries(name);
+//		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
+//			YearMonthDay yearMonthDay = entry.getKey();
+//			DiffStat diffStat = entry.getValue();
+//			Day day = new Day(yearMonthDay.day(), yearMonthDay.month(), yearMonthDay.year());
+//			removedSeries.add(day, Integer.valueOf(-diffStat.removed()));    
+//		}
+//		dataset.addSeries(removedSeries);
+
+
+		return dataset;
+	}
+	
+	private static XYDataset createTotalDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+		int total = 0;
+		
+		TimeSeries totalSeries = new TimeSeries(name);
+		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
+			YearMonthDay yearMonthDay = entry.getKey();
+			DiffStat diffStat = entry.getValue();
+			Day day = new Day(yearMonthDay.day(), yearMonthDay.month(), yearMonthDay.year());
+			total += diffStat.delta();
+			totalSeries.add(day, Integer.valueOf(total));    
+		}
+		
+		TimeSeriesCollection dataset = new TimeSeriesCollection();
+		dataset.addSeries(totalSeries);
+		
+		return dataset;
 	}
 	
 	static final class RevisionCollector implements ISVNLogEntryHandler {
