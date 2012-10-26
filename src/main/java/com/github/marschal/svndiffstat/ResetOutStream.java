@@ -115,9 +115,12 @@ class ResetOutStream extends OutputStream {
 	private void ensureCapacity(int capacity) {
 		if (this.writePosition + capacity > this.data.length) {
 			this.parse();
+			
+			int length = this.writePosition - this.readPosition;
+			System.arraycopy(this.data, this.readPosition, this.data, 0, length);
+			this.readPosition = 0;
+			this.writePosition = length;
 		}
-		int length = this.writePosition - this.readPosition;
-		System.arraycopy(this.data, this.readPosition, this.data, 0, length);
 	}
 	
 	private void parse() {

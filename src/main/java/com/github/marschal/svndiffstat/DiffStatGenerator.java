@@ -1,15 +1,14 @@
 package com.github.marschal.svndiffstat;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
@@ -29,6 +28,7 @@ public class DiffStatGenerator {
 
 	public static void main(String[] args) throws SVNException {
 		System.out.println("!!!current user directory must be working copy!!!");
+		long start = System.currentTimeMillis();
 		FSRepositoryFactory.setup();
 		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
@@ -45,29 +45,34 @@ public class DiffStatGenerator {
 		clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
 				limit, logHandler);
 		List<CommitCoordinate> coordinates = logHandler.getCoordinates();
-		for (CommitCoordinate coordinate : coordinates) {
-			long revision = coordinate.getRevision();
-			System.out.println(revision + ": " + coordinate.getDate());
-		}
-		System.out.println("=========================");
 		
 		SVNDiffClient diffClient = clientManager.getDiffClient();
 //		Set<String> includedFiles = new HashSet<>(Arrays.asList("java", "xml"));
 		Set<String> includedFiles = Collections.singleton("java");
-		diffClient.setDiffGenerator(new DiffStatDiffGenerator(diffClient.getDiffGenerator(), includedFiles));
+		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(), includedFiles);
+		diffClient.setDiffGenerator(diffGenerator);
 		SVNDepth depth = SVNDepth.INFINITY;
 		boolean useAncestry = true;
 //		diffClient.setGitDiffFormat(true);
 		Collection<String> changeLists = null;
+		OutputStream result = new ResetOutStream();
 		for (CommitCoordinate coordinate : coordinates) {
 			long revision = coordinate.getRevision();
-			OutputStream result = System.out;
 			SVNRevision newRevision = SVNRevision.create(revision);
 			SVNRevision oldRevision = SVNRevision.create(revision - 1L);
-			SVNRevision peg = null;
-//			diffClient.doDiff
 			diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
 		}
+		long end = System.currentTimeMillis();
+		System.out.printf("%n parsed: %d revisions is %d s%n", coordinates.size(), (end - start) / 1000);
+		
+		Map<Long, DiffStat> diffStats = diffGenerator.getDiffStats();
+		System.out.println(diffStats.size() + " diff stats");
+		
+		DiffStat total = new DiffStat(0, 0);
+		for (DiffStat diffStat : diffStats.values()) {
+			total.add(diffStat);
+		}
+		System.out.println("total: " + total);
 	}
 	
 	static final class RevisionCollector implements ISVNLogEntryHandler {
@@ -102,16 +107,16 @@ public class DiffStatGenerator {
 	static final class DiffStatDiffGenerator implements ISVNDiffGenerator {
 		
 		private final ISVNDiffGenerator delegate;
-		private final List<DiffStat> diffStats;
+		private final Map<Long, DiffStat> diffStats;
 		private final Set<String> includedFileExtensions;
 		
 		DiffStatDiffGenerator(ISVNDiffGenerator delegate, Set<String> includedFileExtensions) {
 			this.delegate = delegate;
 			this.includedFileExtensions = includedFileExtensions;
-			this.diffStats = new ArrayList<>();
+			this.diffStats = new HashMap<>();
 		}
 		
-		List<DiffStat> getDiffStats() {
+		Map<Long, DiffStat> getDiffStats() {
 			return this.diffStats;
 		}
 		
@@ -210,15 +215,23 @@ public class DiffStatGenerator {
 		}
 
 		@Override
-		public void displayFileDiff(String path, File file1, File file2,
-				String rev1, String rev2, String mimeType1, String mimeType2,
-				OutputStream result) throws SVNException {
+		public void displayFileDiff(String path, File file1, File file2, String rev1, String rev2, String mimeType1, String mimeType2, OutputStream result) throws SVNException {
 			if (this.considerFile(path)) {
-				ResetOutStream resetOutStream = new ResetOutStream();
+				ResetOutStream resetOutStream = (ResetOutStream) result;
+				resetOutStream.initialize();
 				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
-				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, resetOutStream);
+				long newRevision = Long.parseLong(rev2.substring("(revision ".length(), rev2.length() - 1));
 				DiffStat diffStat = resetOutStream.finish();
-				System.out.printf("%n%s%n", diffStat);
+				this.addDiffStat(newRevision, diffStat);
+			}
+		}
+		
+		private void addDiffStat(Long revision, DiffStat diffStat) {
+			DiffStat oldStat = this.diffStats.get(revision);
+			if (oldStat != null) {
+				oldStat.add(diffStat);
+			} else {
+				this.diffStats.put(revision, diffStat);
 			}
 		}
 		
