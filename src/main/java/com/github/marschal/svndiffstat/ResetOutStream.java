@@ -30,7 +30,7 @@ class ResetOutStream extends OutputStream {
 	private boolean headerParsed;
 	
 	ResetOutStream() {
-		this(0x1FFF);
+		this(0x4000);
 	}
 	
 	ResetOutStream(int capacity) {
