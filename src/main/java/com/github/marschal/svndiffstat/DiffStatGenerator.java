@@ -9,7 +9,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
 import org.tmatesoft.svn.core.SVNDepth;
@@ -73,6 +76,29 @@ public class DiffStatGenerator {
 			total.add(diffStat);
 		}
 		System.out.println("total: " + total);
+		
+		Map<Long, YearMonthDay> revisionToDateMap = new HashMap<>(coordinates.size());
+		for (CommitCoordinate commitCoordinate : coordinates) {
+			Date date = commitCoordinate.getDate();
+			long revision = commitCoordinate.getRevision();
+			YearMonthDay yearMonthDay = YearMonthDay.fromDate(date);
+			revisionToDateMap.put(revision, yearMonthDay);
+		}
+		
+		SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats = new TreeMap<>();
+		for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
+			Long revision = entry.getKey();
+			YearMonthDay yearMonthDay = revisionToDateMap.get(revision);
+			DiffStat oldDiffStat = aggregatedDiffstats.get(yearMonthDay);
+			DiffStat diffStat = entry.getValue();
+			if (oldDiffStat != null) {
+				oldDiffStat.add(diffStat);
+			} else {
+				aggregatedDiffstats.put(yearMonthDay, diffStat);
+			}
+		}
+		
+		System.out.println(aggregatedDiffstats);
 	}
 	
 	static final class RevisionCollector implements ISVNLogEntryHandler {
