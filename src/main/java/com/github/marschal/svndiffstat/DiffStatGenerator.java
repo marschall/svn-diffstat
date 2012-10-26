@@ -6,6 +6,7 @@ import static java.lang.Math.min;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.io.File;
 import java.io.OutputStream;
@@ -68,24 +69,82 @@ public class DiffStatGenerator {
 
 	public static void main(String[] args) throws SVNException {
 		System.out.println("!!!current user directory must be working copy!!!");
-		long start = System.currentTimeMillis();
 		FSRepositoryFactory.setup();
-		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
-		SVNURL repoUrl = SVNURL.parseURIEncoded("file:///Users/marschall/svn/memoryfilesystem");
+		long start = System.currentTimeMillis();
+		SVNClientManager clientManager = SVNClientManager.newInstance();
+//		File workingCopy = new File("/Users/marschall/Documents/workspaces/default/memoryfilesystem-workingcopy");
+		File workingCopy = new File("").getAbsoluteFile();
+		
+		List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, workingCopy);
+		long end = System.currentTimeMillis();
+		
+		System.out.printf("%n parsed: %d revisions is %d s%n", coordinates.size(), (end - start) / 1000);
+		
+		
+		Map<Long, DiffStat> diffStats = getDiffStats(clientManager, workingCopy, coordinates);
+		System.out.println(diffStats.size() + " diff stats");
+		
+		DiffStat total = new DiffStat(0, 0);
+		for (DiffStat diffStat : diffStats.values()) {
+			total.add(diffStat);
+		}
+		System.out.println("total: " + total);
+		
+		SortedMap<YearMonthDay,DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
+		
+		JFreeChart chart = createChart(aggregatedDiffstats);
+		displayChard(chart);
+	}
+	
+	private static SortedMap<YearMonthDay, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
+		Map<Long, YearMonthDay> revisionToDateMap = buildRevisionToDateMap(coordinates);
+		
+		YearMonthDay fakeStart = YearMonthDay.fromDate(coordinates.get(0).getDate()).previous();
+		SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats = new TreeMap<>();
+		aggregatedDiffstats.put(fakeStart, new DiffStat(0, 0));
+		for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
+			Long revision = entry.getKey();
+			YearMonthDay yearMonthDay = revisionToDateMap.get(revision);
+			DiffStat oldDiffStat = aggregatedDiffstats.get(yearMonthDay);
+			DiffStat diffStat = entry.getValue();
+			if (oldDiffStat != null) {
+				oldDiffStat.add(diffStat);
+			} else {
+				aggregatedDiffstats.put(yearMonthDay, diffStat);
+			}
+		}
+		return aggregatedDiffstats;
+	}
+
+	private static Map<Long, YearMonthDay> buildRevisionToDateMap(List<CommitCoordinate> coordinates) {
+		Map<Long, YearMonthDay> revisionToDateMap = new HashMap<>(coordinates.size());
+		for (CommitCoordinate commitCoordinate : coordinates) {
+			Date date = commitCoordinate.getDate();
+			long revision = commitCoordinate.getRevision();
+			YearMonthDay yearMonthDay = YearMonthDay.fromDate(date);
+			revisionToDateMap.put(revision, yearMonthDay);
+		}
+		return revisionToDateMap;
+	}
+	
+	private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, File workingCopy) throws SVNException {
+//		SVNURL repoUrl = SVNURL.parseURIEncoded("file:///Users/marschall/svn/memoryfilesystem");
 		boolean stopOnCopy = true;
 		boolean discoverChangedPaths = false;
 		SVNRevision startRevision = SVNRevision.create(1L);
 		SVNRevision endRevision = SVNRevision.HEAD;
 		String author = "marschall";
-		File workingCopy = new File("/Users/marschall/Documents/workspaces/default/memoryfilesystem-workingcopy");
+
 		File[] paths = new File[]{workingCopy};
 		RevisionCollector logHandler = new RevisionCollector(author);
 		long limit = Long.MAX_VALUE;
 		clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
 				limit, logHandler);
-		List<CommitCoordinate> coordinates = logHandler.getCoordinates();
-		
+		return logHandler.getCoordinates();
+	}
+	
+	private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, File workingCopy, List<CommitCoordinate> coordinates) throws SVNException {
 		SVNDiffClient diffClient = clientManager.getDiffClient();
 //		Set<String> includedFiles = new HashSet<>(Arrays.asList("java", "xml"));
 		Set<String> includedFiles = Collections.singleton("java");
@@ -102,43 +161,8 @@ public class DiffStatGenerator {
 			SVNRevision oldRevision = SVNRevision.create(revision - 1L);
 			diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
 		}
-		long end = System.currentTimeMillis();
-		System.out.printf("%n parsed: %d revisions is %d s%n", coordinates.size(), (end - start) / 1000);
 		
-		Map<Long, DiffStat> diffStats = diffGenerator.getDiffStats();
-		System.out.println(diffStats.size() + " diff stats");
-		
-		DiffStat total = new DiffStat(0, 0);
-		for (DiffStat diffStat : diffStats.values()) {
-			total.add(diffStat);
-		}
-		System.out.println("total: " + total);
-		
-		Map<Long, YearMonthDay> revisionToDateMap = new HashMap<>(coordinates.size());
-		for (CommitCoordinate commitCoordinate : coordinates) {
-			Date date = commitCoordinate.getDate();
-			long revision = commitCoordinate.getRevision();
-			YearMonthDay yearMonthDay = YearMonthDay.fromDate(date);
-			revisionToDateMap.put(revision, yearMonthDay);
-		}
-		YearMonthDay fakeStart = YearMonthDay.fromDate(coordinates.get(0).getDate()).previous();
-		
-		SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats = new TreeMap<>();
-		aggregatedDiffstats.put(fakeStart, new DiffStat(0, 0));
-		for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
-			Long revision = entry.getKey();
-			YearMonthDay yearMonthDay = revisionToDateMap.get(revision);
-			DiffStat oldDiffStat = aggregatedDiffstats.get(yearMonthDay);
-			DiffStat diffStat = entry.getValue();
-			if (oldDiffStat != null) {
-				oldDiffStat.add(diffStat);
-			} else {
-				aggregatedDiffstats.put(yearMonthDay, diffStat);
-			}
-		}
-		
-		JFreeChart chart = createChart(aggregatedDiffstats);
-		displayChard(chart);
+		return diffGenerator.getDiffStats();
 	}
 	
 	private static void displayChard(final JFreeChart chart) {
