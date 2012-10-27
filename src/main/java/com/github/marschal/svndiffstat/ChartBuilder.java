@@ -5,6 +5,7 @@ import static java.awt.BasicStroke.JOIN_ROUND;
 import static java.awt.Color.WHITE;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static org.jfree.chart.plot.PlotOrientation.VERTICAL;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -22,7 +23,6 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.AxisLocation;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.chart.renderer.xy.XYAreaRenderer;
@@ -44,6 +44,7 @@ final class ChartBuilder {
 	static final Color ADDED_STROKE = new Color(0x1D, 0xB3, 0x4F);
 	static final Color REMOVED_FILL = new Color(0xAD, 0x10, 0x17, 127);  // also label
 	static final Color REMOVED_STROKE = new Color(0xAD, 0x10, 0x17);
+	static final Color AXIS_LINE_COLOR = new Color(0xEE, 0xEE, 0xEE);
 	
 	
 	static void displayChard(final JFreeChart chart, final DiffStatConfiguration configuration) {
@@ -82,10 +83,10 @@ final class ChartBuilder {
 		float strokeWidth = 1.5f * configuration.multiplierFloat();
 		
 		XYPlot plot = chart.getXYPlot();
-        plot.setOrientation(PlotOrientation.VERTICAL);
+        plot.setOrientation(VERTICAL);
         plot.setBackgroundPaint(WHITE);
         plot.setDomainGridlinesVisible(true);
-        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+        plot.setDomainGridlinePaint(AXIS_LINE_COLOR);
         plot.setDomainGridlineStroke(new BasicStroke(1.0f * configuration.multiplierFloat()));
         plot.setRangeGridlinesVisible(false);
         
@@ -116,7 +117,6 @@ final class ChartBuilder {
 		
 		// Total Axix 2
         NumberAxis totalAxis = new NumberAxis("Total Lines");
-//        totalAxis.setFixedDimension(10.0);
         totalAxis.setLabelPaint(VALUE_LABEL);
         totalAxis.setTickLabelPaint(DARK_BLUE);
         totalAxis.setLabelFont(helvetica);
