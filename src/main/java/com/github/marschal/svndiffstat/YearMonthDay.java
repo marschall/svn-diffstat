@@ -38,6 +38,8 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 	}
 	
 	Day toDay() {
+		// compensate for the fact that java.util.Calendar months are 0-based
+		// and org.jfree.data.time.Day months are 1-based
 		return new Day(this.day, this.month + (1 - Calendar.JANUARY), this.year);
 	}
 	
