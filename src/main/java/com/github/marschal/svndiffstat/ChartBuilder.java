@@ -184,7 +184,7 @@ final class ChartBuilder {
 		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
+			Day day = yearMonthDay.toDay();
 			int added = diffStat.added();
 			maximum = max(maximum, added);
 			addedSeries.add(day, Integer.valueOf(added));    
@@ -195,7 +195,7 @@ final class ChartBuilder {
 		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
+			Day day = yearMonthDay.toDay();
 			int removed = -diffStat.removed();
 			minimum = min(minimum, removed);
 			removedSeries.add(day, Integer.valueOf(removed));    
@@ -212,7 +212,7 @@ final class ChartBuilder {
 		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
-			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
+			Day day = yearMonthDay.toDay();
 			total += diffStat.delta();
 			totalSeries.add(day, Integer.valueOf(total));    
 		}

@@ -3,6 +3,8 @@ package com.github.marschal.svndiffstat;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.jfree.data.time.Day;
+
 final class YearMonthDay implements Comparable<YearMonthDay> {
 	
 	private final int year;
@@ -23,6 +25,10 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 
 	private static YearMonthDay fromCalendar(Calendar calendar) {
 		return new YearMonthDay(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+	}
+	
+	Day toDay() {
+		return new Day(this.day, this.month + (1 - Calendar.JANUARY), this.year);
 	}
 	
 	YearMonthDay previous() {
