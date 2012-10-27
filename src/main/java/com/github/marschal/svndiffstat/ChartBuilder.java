@@ -23,6 +23,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.AxisLocation;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.chart.renderer.xy.XYAreaRenderer;
@@ -137,7 +138,8 @@ final class ChartBuilder {
         plot.setRangeAxis(1, totalAxis);
         plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
         
-        XYDataset totalDataSet = createTotalDataset("Total Lines", aggregatedDiffstats);
+        XYDatasetAndTotal datasetAndTotal = createTotalDataset("Total Lines", aggregatedDiffstats);
+        XYDataset totalDataSet = datasetAndTotal.dataset;
 		plot.setDataset(1, totalDataSet);
         plot.mapDatasetToRangeAxis(1, 1);
 //        XYItemRenderer totalRenderer = new XYSplineRenderer();
@@ -146,8 +148,22 @@ final class ChartBuilder {
         totalRenderer.setSeriesStroke(0, new BasicStroke(strokeWidth, CAP_ROUND, JOIN_ROUND,
         		10.0f * configuration.multiplierFloat(), new float[]{6.5f * configuration.multiplierFloat()} , 0.0f));
         plot.setRenderer(1, totalRenderer);
+        
+        totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.total)));
 		
         return chart;
+	}
+	
+	static int computeTickUnitSize(int maximum) {
+		int tenbase = 1;
+		while (tenbase * 10 < maximum) {
+			tenbase *= 10;
+		}
+		if (maximum / tenbase <= 5) {
+			return tenbase / 2;
+		} else {
+			return tenbase;
+		}
 	}
 	
 	private static int minimum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
@@ -192,7 +208,7 @@ final class ChartBuilder {
 		return dataset;
 	}
 	
-	private static XYDataset createTotalDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+	private static XYDatasetAndTotal createTotalDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
 		int total = 0;
 		
 		TimeSeries totalSeries = new TimeSeries(name);
@@ -207,7 +223,19 @@ final class ChartBuilder {
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
 		dataset.addSeries(totalSeries);
 		
-		return dataset;
+		return new XYDatasetAndTotal(dataset, total);
+	}
+	
+	static final class XYDatasetAndTotal {
+		
+		final XYDataset dataset;
+		final int total;
+		
+		XYDatasetAndTotal(XYDataset dataset, int total) {
+			this.dataset = dataset;
+			this.total = total;
+		}
+		
 	}
 
 }
