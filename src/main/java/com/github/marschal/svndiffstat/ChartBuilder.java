@@ -3,6 +3,7 @@ package com.github.marschal.svndiffstat;
 import static java.awt.BasicStroke.CAP_ROUND;
 import static java.awt.BasicStroke.JOIN_ROUND;
 import static java.awt.Color.WHITE;
+import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static org.jfree.chart.plot.PlotOrientation.VERTICAL;
@@ -75,7 +76,8 @@ final class ChartBuilder {
         boolean urls = false;
         Font helvetica = new Font("Helvetica", Font.PLAIN, 11 * configuration.multiplierInt());
 		
-		XYDataset dataset = createDeltaDataset("Additions and Delections", aggregatedDiffstats);
+		XYDatasetMinMax datasetMinMax = createDeltaDataset("Additions and Delections", aggregatedDiffstats);
+		XYDataset dataset = datasetMinMax.dataset;
 		JFreeChart chart = ChartFactory.createTimeSeriesChart("", "", "", dataset, legend, tooltips, urls);
 		
 		chart.setBackgroundPaint(WHITE);
@@ -104,13 +106,16 @@ final class ChartBuilder {
         additionDeletionAxis.setLabelFont(helvetica);
         additionDeletionAxis.setTickLabelFont(helvetica);
         additionDeletionAxis.setRangeType(RangeType.FULL);
-        additionDeletionAxis.setLowerBound(minimum(aggregatedDiffstats));
-        additionDeletionAxis.setUpperBound(maximum(aggregatedDiffstats));
+        int lowerBound = datasetMinMax.min + (int) (datasetMinMax.min * 0.1d);
+        additionDeletionAxis.setLowerBound(lowerBound);
+        int upperBound = datasetMinMax.max + (int) (datasetMinMax.max * 0.1d);
+        additionDeletionAxis.setUpperBound(upperBound);
         additionDeletionAxis.setNumberFormatOverride(new AbbreviatingNumberFormat());
         additionDeletionAxis.setMinorTickMarksVisible(false);
         additionDeletionAxis.setTickMarkInsideLength(5.0f * configuration.multiplierFloat());
         additionDeletionAxis.setTickMarkOutsideLength(0.0f);
         additionDeletionAxis.setTickMarkStroke(new BasicStroke(2.0f * configuration.multiplierFloat()));
+        additionDeletionAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetMinMax.max + abs(datasetMinMax.min))));
         
         XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
         areaRenderer.setOutline(true);
@@ -159,39 +164,30 @@ final class ChartBuilder {
 		while (tenbase * 10 < maximum) {
 			tenbase *= 10;
 		}
-		if (maximum / tenbase <= 5) {
+		int numberOfTicks = maximum / tenbase;
+		if (numberOfTicks == 1) {
+			return tenbase / 10;
+		} else if (numberOfTicks <= 5) {
 			return tenbase / 2;
 		} else {
 			return tenbase;
 		}
 	}
 	
-	private static int minimum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-		int minimum = Integer.MAX_VALUE;
-		for (DiffStat diffStat : aggregatedDiffstats.values()) {
-			minimum = min(minimum, -diffStat.removed());
-		}
-		return minimum + (int) (minimum * 0.10);
-	}
-	
-	private static int maximum(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-		int maximum = Integer.MIN_VALUE;
-		for (DiffStat diffStat : aggregatedDiffstats.values()) {
-			maximum = max(maximum, diffStat.added());
-		}
-		return maximum + (int) (maximum * 0.10);
-	}
-	
-	private static XYDataset createDeltaDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+	private static XYDatasetMinMax createDeltaDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
 
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
+		int minimum = 0;
+		int maximum = 0;
 		
 		TimeSeries addedSeries = new TimeSeries(name);
 		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
 			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
-			addedSeries.add(day, Integer.valueOf(diffStat.added()));    
+			int added = diffStat.added();
+			maximum = max(maximum, added);
+			addedSeries.add(day, Integer.valueOf(added));    
 		}
 		dataset.addSeries(addedSeries);
 		
@@ -200,12 +196,13 @@ final class ChartBuilder {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
 			Day day = new Day(yearMonthDay.day(), yearMonthDay.month() + 1, yearMonthDay.year());
-			removedSeries.add(day, Integer.valueOf(-diffStat.removed()));    
+			int removed = -diffStat.removed();
+			minimum = min(minimum, removed);
+			removedSeries.add(day, Integer.valueOf(removed));    
 		}
 		dataset.addSeries(removedSeries);
-
-
-		return dataset;
+		
+		return new XYDatasetMinMax(dataset, minimum, maximum);
 	}
 	
 	private static XYDatasetAndTotal createTotalDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
@@ -224,6 +221,19 @@ final class ChartBuilder {
 		dataset.addSeries(totalSeries);
 		
 		return new XYDatasetAndTotal(dataset, total);
+	}
+	
+	static final class XYDatasetMinMax {
+		final XYDataset dataset;
+		final int min;
+		final int max;
+		
+		XYDatasetMinMax(XYDataset dataset, int min, int max) {
+			this.dataset = dataset;
+			this.min = min;
+			this.max = max;
+		}
+		
 	}
 	
 	static final class XYDatasetAndTotal {

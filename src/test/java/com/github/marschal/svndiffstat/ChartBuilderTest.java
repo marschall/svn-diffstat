@@ -1,6 +1,6 @@
 package com.github.marschal.svndiffstat;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
@@ -16,6 +16,7 @@ public class ChartBuilderTest {
 		assertEquals(1000, ChartBuilder.computeTickUnitSize(8500));
 		assertEquals(1000, ChartBuilder.computeTickUnitSize(9500));
 		assertEquals(1000, ChartBuilder.computeTickUnitSize(10000));
+		assertEquals(1000, ChartBuilder.computeTickUnitSize(11463));
 	}
 
 }
