@@ -34,9 +34,9 @@ final class ProgressReporter {
 		long loggingEnd = System.currentTimeMillis();
 		long duration = loggingEnd - this.loggingStart;
 		if (duration >= 2000) {
-			this.out.printf("parsed: %d revisions is %ds%n", coordinates.size(), duration / 1000);
+			this.out.printf("logged: %d revisions is %ds%n", coordinates.size(), duration / 1000);
 		} else {
-			this.out.printf("parsed: %d revisions is %dms%n", coordinates.size(), duration);
+			this.out.printf("logged: %d revisions is %dms%n", coordinates.size(), duration);
 		}
 	}
 
