@@ -83,7 +83,7 @@ final class ChartBuilder {
 		chart.setBackgroundPaint(WHITE);
 		chart.setBorderVisible(false);
 		
-		float strokeWidth = 1.5f * configuration.multiplierFloat();
+		float strokeWidth = 1.2f * configuration.multiplierFloat();
 		
 		XYPlot plot = chart.getXYPlot();
         plot.setOrientation(VERTICAL);
@@ -151,7 +151,8 @@ final class ChartBuilder {
         XYItemRenderer totalRenderer = new StandardXYItemRenderer();
         totalRenderer.setSeriesPaint(0, TOTAL_FILL);
         totalRenderer.setSeriesStroke(0, new BasicStroke(strokeWidth, CAP_ROUND, JOIN_ROUND,
-        		10.0f * configuration.multiplierFloat(), new float[]{6.5f * configuration.multiplierFloat()} , 0.0f));
+        		10.0f * configuration.multiplierFloat(),
+        		new float[]{6.0f * configuration.multiplierFloat(), 3.0f * configuration.multiplierFloat()} , 0.0f));
         plot.setRenderer(1, totalRenderer);
         
         totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.total)));
