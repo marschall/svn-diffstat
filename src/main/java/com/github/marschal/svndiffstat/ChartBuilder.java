@@ -37,8 +37,8 @@ final class ChartBuilder {
 	
 	static final Color DATE_LABEL = new Color(0x33, 0x33, 0x33);
 	static final Color VALUE_LABEL = new Color(0x88, 0x88, 0x88);
-	static final Color DARK_BLUE = new Color(0x04, 0x7D, 0xDA);
-	static final Color LIGHT_BLUE = new Color(0x04, 0x7D, 0xDA, 127); // also label
+	static final Color TOTAL_LABEL = new Color(0x04, 0x7D, 0xDA);
+	static final Color TOTAL_FILL = new Color(0x04, 0x7D, 0xDA, 127); // also label
 	static final Color DARK_GREY = new Color(0x33, 0x33, 0x33);
 	static final Color ADDED_FILL = new Color(0x1D, 0xB3, 0x4F, 127); // also label
 	static final Color ADDED_STROKE = new Color(0x1D, 0xB3, 0x4F);
@@ -95,8 +95,10 @@ final class ChartBuilder {
         DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
         domainAxis.setDateFormatOverride(new SimpleDateFormat("MM/yy"));
         domainAxis.setTickLabelFont(helvetica);
+        domainAxis.setAxisLineVisible(false);
 
         NumberAxis additionDeletionAxis = (NumberAxis) plot.getRangeAxis(0);
+        additionDeletionAxis.setAxisLineVisible(false);
         additionDeletionAxis.setLabel("Additions and Deletions");
         additionDeletionAxis.setLabelFont(helvetica);
         additionDeletionAxis.setTickLabelFont(helvetica);
@@ -104,6 +106,10 @@ final class ChartBuilder {
         additionDeletionAxis.setLowerBound(minimum(aggregatedDiffstats));
         additionDeletionAxis.setUpperBound(maximum(aggregatedDiffstats));
         additionDeletionAxis.setNumberFormatOverride(new AbbreviatingNumberFormat());
+        additionDeletionAxis.setMinorTickMarksVisible(false);
+        additionDeletionAxis.setTickMarkInsideLength(5.0f * configuration.multiplierFloat());
+        additionDeletionAxis.setTickMarkOutsideLength(0.0f);
+        additionDeletionAxis.setTickMarkStroke(new BasicStroke(2.0f * configuration.multiplierFloat()));
         
         XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
         areaRenderer.setOutline(true);
@@ -115,13 +121,19 @@ final class ChartBuilder {
         areaRenderer.setSeriesPaint(1, REMOVED_FILL);
 		plot.setRenderer(0, areaRenderer);
 		
-		// Total Axix 2
+		// Total Axis
         NumberAxis totalAxis = new NumberAxis("Total Lines");
+        totalAxis.setAxisLineVisible(false);
         totalAxis.setLabelPaint(VALUE_LABEL);
-        totalAxis.setTickLabelPaint(DARK_BLUE);
+        totalAxis.setTickLabelPaint(TOTAL_LABEL);
         totalAxis.setLabelFont(helvetica);
         totalAxis.setTickLabelFont(helvetica);
         totalAxis.setNumberFormatOverride(new AbbreviatingNumberFormat());
+        totalAxis.setMinorTickMarksVisible(false);
+        totalAxis.setTickMarkInsideLength(5.0f * configuration.multiplierFloat());
+        totalAxis.setTickMarkOutsideLength(0.0f);
+        totalAxis.setTickMarkStroke(new BasicStroke(2.0f * configuration.multiplierFloat()));
+        totalAxis.setTickMarkPaint(TOTAL_LABEL);
         plot.setRangeAxis(1, totalAxis);
         plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
         
@@ -130,7 +142,7 @@ final class ChartBuilder {
         plot.mapDatasetToRangeAxis(1, 1);
 //        XYItemRenderer totalRenderer = new XYSplineRenderer();
         XYItemRenderer totalRenderer = new StandardXYItemRenderer();
-        totalRenderer.setSeriesPaint(0, LIGHT_BLUE);
+        totalRenderer.setSeriesPaint(0, TOTAL_FILL);
         totalRenderer.setSeriesStroke(0, new BasicStroke(strokeWidth, CAP_ROUND, JOIN_ROUND,
         		10.0f * configuration.multiplierFloat(), new float[]{6.5f * configuration.multiplierFloat()} , 0.0f));
         plot.setRenderer(1, totalRenderer);
