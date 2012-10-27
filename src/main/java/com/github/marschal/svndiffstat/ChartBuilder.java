@@ -13,6 +13,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.text.SimpleDateFormat;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.SortedMap;
 
 import javax.swing.JFrame;
@@ -23,6 +24,8 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.AxisLocation;
 import org.jfree.chart.axis.DateAxis;
+import org.jfree.chart.axis.DateTickUnit;
+import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.XYPlot;
@@ -34,6 +37,8 @@ import org.jfree.data.time.Day;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
+import org.joda.time.Days;
+import org.joda.time.LocalDate;
 
 final class ChartBuilder {
 	
@@ -69,7 +74,7 @@ final class ChartBuilder {
 		});
 	}
 	
-	static JFreeChart createChart(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats, DiffStatConfiguration configuration) {
+	static JFreeChart createChart(NavigableMap<YearMonthDay, DiffStat> aggregatedDiffstats, DiffStatConfiguration configuration) {
 		
 		boolean legend = false;
         boolean tooltips = false;
@@ -95,10 +100,11 @@ final class ChartBuilder {
         
         plot.setOutlineVisible(false);
         
-        DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
-        domainAxis.setDateFormatOverride(new SimpleDateFormat("MM/yy"));
-        domainAxis.setTickLabelFont(helvetica);
-        domainAxis.setAxisLineVisible(false);
+        DateAxis dateAxis = (DateAxis) plot.getDomainAxis();
+        dateAxis.setDateFormatOverride(new SimpleDateFormat("MM/yy"));
+        dateAxis.setTickLabelFont(helvetica);
+        dateAxis.setAxisLineVisible(false);
+        dateAxis.setTickUnit(computeDateTickUnit(aggregatedDiffstats));
 
         NumberAxis additionDeletionAxis = (NumberAxis) plot.getRangeAxis(0);
         additionDeletionAxis.setAxisLineVisible(false);
@@ -158,6 +164,24 @@ final class ChartBuilder {
         totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.total)));
 		
         return chart;
+	}
+	
+	static DateTickUnit computeDateTickUnit(NavigableMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+		YearMonthDay start = aggregatedDiffstats.firstKey();
+		YearMonthDay lastKey = aggregatedDiffstats.lastKey();
+		
+		int yearsBetween = start.unitsBetween(lastKey, DateTickUnitType.YEAR);
+		if (yearsBetween >= 5) {
+			return new DateTickUnit(DateTickUnitType.YEAR, computeTickUnitSize(yearsBetween));
+		}
+		
+		int monthsBetween = start.unitsBetween(lastKey, DateTickUnitType.MONTH);
+		if (monthsBetween >= 5) {
+			return new DateTickUnit(DateTickUnitType.MONTH, computeTickUnitSize(monthsBetween));
+		}
+		
+		int daysBetween = start.unitsBetween(lastKey, DateTickUnitType.DAY);
+		return new DateTickUnit(DateTickUnitType.DAY, computeTickUnitSize(daysBetween));
 	}
 	
 	static int computeTickUnitSize(int maximum) {

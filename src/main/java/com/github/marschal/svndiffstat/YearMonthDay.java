@@ -1,17 +1,25 @@
 package com.github.marschal.svndiffstat;
 
+import static org.jfree.chart.axis.DateTickUnitType.DAY;
+import static org.jfree.chart.axis.DateTickUnitType.MONTH;
+import static org.jfree.chart.axis.DateTickUnitType.YEAR;
+
 import java.util.Calendar;
 import java.util.Date;
 
+import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.Day;
+import org.joda.time.Days;
+import org.joda.time.LocalDate;
+import org.joda.time.Months;
 
 final class YearMonthDay implements Comparable<YearMonthDay> {
 	
-	private final int year;
-	private final int month;
-	private final int day;
+	private final short year;
+	private final byte month;
+	private final byte day;
 	
-	YearMonthDay(int year, int month, int day) {
+	YearMonthDay(short year, byte month, byte day) {
 		this.year = year;
 		this.month = month;
 		this.day = day;
@@ -24,20 +32,45 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 	}
 
 	private static YearMonthDay fromCalendar(Calendar calendar) {
-		return new YearMonthDay(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+		return new YearMonthDay((short) calendar.get(Calendar.YEAR),
+				(byte) calendar.get(Calendar.MONTH),
+				(byte) calendar.get(Calendar.DAY_OF_MONTH));
 	}
 	
 	Day toDay() {
 		return new Day(this.day, this.month + (1 - Calendar.JANUARY), this.year);
 	}
 	
+	LocalDate toLocalDate() {
+		return new LocalDate(year, month, day);
+	}
+	
+	int unitsBetween(YearMonthDay other, DateTickUnitType type) {
+		if (type == YEAR) {
+			return other.year - this.year;
+		} else if (type == MONTH) {
+			Months monthsBetween = Months.monthsBetween(this.toLocalDate(), other.toLocalDate());
+			return monthsBetween.getMonths();
+		} else if (type == DAY) {
+			Days daysBetween = Days.daysBetween(this.toLocalDate(), other.toLocalDate());
+			return daysBetween.getDays();
+		} else {
+			throw new IllegalArgumentException("unsupported tick type: " + type);
+		}
+	}
+	
 	YearMonthDay previous() {
+		Calendar calendar = toCalendar();
+		calendar.roll(Calendar.DAY_OF_MONTH, false);
+		return fromCalendar(calendar);
+	}
+
+	private Calendar toCalendar() {
 		Calendar calendar = Calendar.getInstance();
 		calendar.set(Calendar.YEAR, this.year);
 		calendar.set(Calendar.MONTH, this.month);
 		calendar.set(Calendar.DAY_OF_MONTH, this.day);
-		calendar.roll(Calendar.DAY_OF_MONTH, false);
-		return fromCalendar(calendar);
+		return calendar;
 	}
 	
 	int year() {

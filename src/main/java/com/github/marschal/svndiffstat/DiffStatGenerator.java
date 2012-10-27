@@ -14,8 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.jfree.chart.ChartUtilities;
@@ -47,12 +47,12 @@ public class DiffStatGenerator {
 		
 		DiffStatConfiguration configuration = new DiffStatConfiguration(author, includedFiles, workingCopy, dimension, savePath, true);
 		ProgressReporter reporter = new ProgressReporter(System.out);
-		SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats = getData(configuration, reporter);
+		NavigableMap<YearMonthDay, DiffStat> aggregatedDiffStats = getData(configuration, reporter);
 		
 		saveAndDisplayChart(configuration, aggregatedDiffStats);
 	}
 
-	private static void saveAndDisplayChart(DiffStatConfiguration configuration, SortedMap<YearMonthDay, DiffStat> aggregatedDiffStats) throws IOException {
+	private static void saveAndDisplayChart(DiffStatConfiguration configuration, NavigableMap<YearMonthDay, DiffStat> aggregatedDiffStats) throws IOException {
 		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats, configuration);
 		Path savePath = configuration.getSavePath();
 		if (savePath != null) {
@@ -64,7 +64,7 @@ public class DiffStatGenerator {
 		
 	}
 	
-	private static SortedMap<YearMonthDay,DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+	private static NavigableMap<YearMonthDay,DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
 		reporter.startRevisionLogging();
@@ -76,17 +76,17 @@ public class DiffStatGenerator {
 		reporter.revisionParsinDone(diffStats);
 		
 		reporter.startAggregation();
-		SortedMap<YearMonthDay,DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
+		NavigableMap<YearMonthDay,DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
 		reporter.aggregationDone(aggregatedDiffstats);
 		
 		return aggregatedDiffstats;
 	}
 	
-	private static SortedMap<YearMonthDay, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
+	private static NavigableMap<YearMonthDay, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
 		Map<Long, YearMonthDay> revisionToDateMap = buildRevisionToDateMap(coordinates);
 		
 		YearMonthDay fakeStart = YearMonthDay.fromDate(coordinates.get(0).getDate()).previous();
-		SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats = new TreeMap<>();
+		NavigableMap<YearMonthDay, DiffStat> aggregatedDiffstats = new TreeMap<>();
 		aggregatedDiffstats.put(fakeStart, new DiffStat(0, 0));
 		for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
 			Long revision = entry.getKey();
