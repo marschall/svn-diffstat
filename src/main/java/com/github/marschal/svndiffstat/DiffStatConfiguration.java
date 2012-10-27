@@ -7,15 +7,15 @@ import java.util.Set;
 
 final class DiffStatConfiguration {
 	
-	private final String author;
+	private final Set<String> authors;
 	private final Set<String> includedFiles;
 	private final File workingCopy;
 	private final Dimension dimension;
 	private final Path savePath;
 	private final boolean doubleSize;
 	
-	DiffStatConfiguration(String author, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize) {
-		this.author = author;
+	DiffStatConfiguration(Set<String> authors, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize) {
+		this.authors = authors;
 		this.includedFiles = includedFiles;
 		this.workingCopy = workingCopy;
 		this.dimension = dimension;
@@ -23,8 +23,8 @@ final class DiffStatConfiguration {
 		this.doubleSize = doubleSize;
 	}
 	
-	String getAuthor() {
-		return this.author;
+	Set<String> getAuthors() {
+		return this.authors;
 	}
 	
 	Set<String> getIncludedFiles() {

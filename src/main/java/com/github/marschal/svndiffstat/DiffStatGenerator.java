@@ -1,14 +1,9 @@
 package com.github.marschal.svndiffstat;
 
-import java.awt.Dimension;
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -18,53 +13,21 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNProperties;
-import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.wc.ISVNDiffGenerator;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
 import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 
-public class DiffStatGenerator {
+class DiffStatGenerator {
 	
-	public static void main(String[] args) throws SVNException, IOException {
-		System.out.println("!!!current user directory must be working copy!!!");
-		FSRepositoryFactory.setup();
-		
-//		Set<String> includedFiles = new HashSet<>(Arrays.asList("java", "xml"));
-		Set<String> includedFiles = Collections.singleton("java");
-		File workingCopy = new File("").getAbsoluteFile();
-		Dimension dimension = new Dimension(1200, 600);
-		Path savePath = Paths.get("/Users/marschall/tmp/diffstat.png");
-		String author = "marschall";
-		
-		DiffStatConfiguration configuration = new DiffStatConfiguration(author, includedFiles, workingCopy, dimension, savePath, true);
-		ProgressReporter reporter = new ProgressReporter(System.out);
-		NavigableMap<YearMonthDay, DiffStat> aggregatedDiffStats = getData(configuration, reporter);
-		
-		saveAndDisplayChart(configuration, aggregatedDiffStats);
-	}
-
-	private static void saveAndDisplayChart(DiffStatConfiguration configuration, NavigableMap<YearMonthDay, DiffStat> aggregatedDiffStats) throws IOException {
-		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats, configuration);
-		Path savePath = configuration.getSavePath();
-		if (savePath != null) {
-			Dimension dimension = configuration.getDimension();
-			ChartUtilities.saveChartAsPNG(savePath.toFile(), chart, dimension.width * configuration.multiplierInt(), dimension.height * configuration.multiplierInt());
-		} else {
-			ChartBuilder.displayChard(chart, configuration);
-		}
-		
-	}
 	
-	private static NavigableMap<YearMonthDay,DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+	static NavigableMap<YearMonthDay,DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
 		reporter.startRevisionLogging();
@@ -121,7 +84,7 @@ public class DiffStatGenerator {
 		SVNRevision endRevision = SVNRevision.HEAD;
 
 		File[] paths = new File[]{configuration.getWorkingCopy()};
-		RevisionCollector logHandler = new RevisionCollector(configuration.getAuthor(), reporter);
+		RevisionCollector logHandler = new RevisionCollector(configuration.getAuthors(), reporter);
 		long limit = Long.MAX_VALUE;
 		clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
 				limit, logHandler);
@@ -152,12 +115,12 @@ public class DiffStatGenerator {
 	
 	static final class RevisionCollector implements ISVNLogEntryHandler {
 		
-		private final String author;
+		private final Set<String> authors;
 		private final List<CommitCoordinate> coordinates;
 		private final ProgressReporter reporter;
 		
-		RevisionCollector(String author, ProgressReporter reporter) {
-			this.author = author;
+		RevisionCollector(Set<String> authors, ProgressReporter reporter) {
+			this.authors = authors;
 			this.reporter = reporter;
 			this.coordinates = new ArrayList<>();
 		}
@@ -167,7 +130,7 @@ public class DiffStatGenerator {
 		public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
 			long revision = logEntry.getRevision();
 			String logEntryAuthor = logEntry.getAuthor();
-			if (this.author.equals(logEntryAuthor)) {
+			if (this.authors.contains(logEntryAuthor)) {
 				Date date = logEntry.getDate();
 				CommitCoordinate coordinate = new CommitCoordinate(revision, date);
 				this.coordinates.add(coordinate);

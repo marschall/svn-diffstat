@@ -1,6 +1,7 @@
 package com.github.marschal.svndiffstat;
 
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -92,6 +93,14 @@ final class ProgressReporter {
 		} else {
 			this.out.printf("aggregated into %d data poiints %dms%n", aggregatedDiffstats.size(), duration);
 		}
+	}
+	
+	void saveTo(Path path) {
+		this.out.print("Saving to: " + path);
+	}
+	
+	void saveDone() {
+		this.out.println(" done");
 	}
 
 }

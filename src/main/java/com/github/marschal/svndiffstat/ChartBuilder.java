@@ -38,8 +38,6 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.ui.RectangleInsets;
-import org.joda.time.Days;
-import org.joda.time.LocalDate;
 
 final class ChartBuilder {
 	
