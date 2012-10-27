@@ -1,19 +1,18 @@
 package com.github.marschal.svndiffstat;
 
+import static java.awt.BasicStroke.CAP_ROUND;
+import static java.awt.BasicStroke.JOIN_ROUND;
 import static java.awt.Color.WHITE;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.awt.BasicStroke;
-import static java.awt.BasicStroke.CAP_ROUND;
-import static java.awt.BasicStroke.JOIN_ROUND;
 import java.awt.Color;
 import java.awt.Font;
 import java.text.SimpleDateFormat;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 
-import javax.naming.spi.DirStateFactory;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 

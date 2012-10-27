@@ -8,16 +8,22 @@ import java.util.SortedMap;
 
 final class ProgressReporter {
 	
+	private static final long LOG_INTERVAL = 100L;
+	
 	private final PrintStream out;
 	private long loggingStart;
 	private long parsingStart;
 	private long aggregationStart;
-	private long lastSeenRevision;
+	private long lastParsedRevision;
+	private long lastRevisionLoggedTime;
+	private long lastRevisionParsedTime;
 	
 	
 	ProgressReporter(PrintStream out) {
 		this.out = out;
-		this.lastSeenRevision = 0L;
+		this.lastParsedRevision = 0L;
+		this.lastRevisionLoggedTime = 0L;
+		this.lastRevisionParsedTime = 0L;
 	}
 	
 	void startRevisionLogging() {
@@ -26,11 +32,20 @@ final class ProgressReporter {
 	
 	void revisionLoggingDone(List<CommitCoordinate> coordinates) {
 		long loggingEnd = System.currentTimeMillis();
-		this.out.printf("parsed: %d revisions is %ds%n", coordinates.size(), (loggingEnd - this.loggingStart) / 1000);
+		long duration = loggingEnd - this.loggingStart;
+		if (duration >= 2000) {
+			this.out.printf("parsed: %d revisions is %ds%n", coordinates.size(), duration / 1000);
+		} else {
+			this.out.printf("parsed: %d revisions is %dms%n", coordinates.size(), duration);
+		}
 	}
 
 	void revisionLogged(long revision) {
-		
+		long now = System.currentTimeMillis();
+		if (now - lastRevisionLoggedTime >= LOG_INTERVAL) {
+			this.out.println("logged revsion: " + revision);
+		}
+		this.lastRevisionLoggedTime = now;
 	}
 	
 	void startRevisionParsing() {
@@ -39,7 +54,12 @@ final class ProgressReporter {
 	
 	void revisionParsinDone(Map<Long, DiffStat> diffStats) {
 		long parsingEnd = System.currentTimeMillis();
-		this.out.printf("parsed %d commits in %ds%n", diffStats.size(), (parsingEnd - this.parsingStart) / 1000);
+		long duration = parsingEnd - this.parsingStart;
+		if (duration >= 2000) {
+			this.out.printf("parsed %d commits in %ds%n", diffStats.size(), duration / 1000);
+		} else {
+			this.out.printf("parsed %d commits in %dms%n", diffStats.size(), duration);
+		}
 		
 		DiffStat total = new DiffStat(0, 0);
 		for (DiffStat diffStat : diffStats.values()) {
@@ -49,8 +69,14 @@ final class ProgressReporter {
 	}
 	
 	void revisionParsed(long revision) {
-		if (this.lastSeenRevision != revision) {
+		long now = System.currentTimeMillis();
+		if (this.lastParsedRevision != revision) {
+			if (now - this.lastRevisionParsedTime >= LOG_INTERVAL) {
+				this.out.println("parsed revision: " + revision);
+			}
 			
+			this.lastParsedRevision = revision;
+			this.lastRevisionParsedTime = now;
 		}
 	}
 
@@ -60,7 +86,12 @@ final class ProgressReporter {
 
 	void aggregationDone(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
 		long aggregationEnd = System.currentTimeMillis();
-		this.out.printf("aggregated into %d data poiints %ds%n", aggregatedDiffstats.size(), (aggregationEnd - this.aggregationStart) / 1000);
+		long duration = aggregationEnd - this.aggregationStart;
+		if (duration >= 2000) {
+			this.out.printf("aggregated into %d data poiints %ds%n", aggregatedDiffstats.size(), duration / 1000);
+		} else {
+			this.out.printf("aggregated into %d data poiints %dms%n", aggregatedDiffstats.size(), duration);
+		}
 	}
 
 }
