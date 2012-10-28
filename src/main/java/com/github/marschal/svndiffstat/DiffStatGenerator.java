@@ -94,13 +94,14 @@ class DiffStatGenerator {
 	private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, List<CommitCoordinate> coordinates, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 		SVNDiffClient diffClient = clientManager.getDiffClient();
 
-		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(), configuration.getIncludedFiles(), reporter);
+		ResetOutputStream result = new ResetOutputStream();
+		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(),
+				configuration.getIncludedFiles(), reporter, result);
 		diffClient.setDiffGenerator(diffGenerator);
 		SVNDepth depth = SVNDepth.INFINITY;
 		boolean useAncestry = true;
 //		diffClient.setGitDiffFormat(true);
 		Collection<String> changeLists = null;
-		OutputStream result = new ResetOutStream();
 		File workingCopy = configuration.getWorkingCopy();
 		for (CommitCoordinate coordinate : coordinates) {
 			long revision = coordinate.getRevision();
@@ -151,11 +152,13 @@ class DiffStatGenerator {
 		private final Map<Long, DiffStat> diffStats;
 		private final Set<String> includedFileExtensions;
 		private final ProgressReporter reporter;
+		private final ResetOutputStream output;
 		
-		DiffStatDiffGenerator(ISVNDiffGenerator delegate, Set<String> includedFileExtensions, ProgressReporter reporter) {
+		DiffStatDiffGenerator(ISVNDiffGenerator delegate, Set<String> includedFileExtensions, ProgressReporter reporter, ResetOutputStream output) {
 			this.delegate = delegate;
 			this.includedFileExtensions = includedFileExtensions;
 			this.reporter = reporter;
+			this.output = output;
 			this.diffStats = new HashMap<>();
 		}
 		
@@ -190,6 +193,7 @@ class DiffStatGenerator {
 		@Override
 		public void setEncoding(String encoding) {
 			this.delegate.setEncoding(encoding);
+			this.output.setEncoding(encoding);
 		}
 
 		@Override
@@ -200,6 +204,7 @@ class DiffStatGenerator {
 		@Override
 		public void setEOL(byte[] eol) {
 			this.delegate.setEOL(eol);
+			this.output.setEOL(eol);
 		}
 
 		@Override
@@ -261,7 +266,7 @@ class DiffStatGenerator {
 		public void displayFileDiff(String path, File file1, File file2, String rev1, String rev2, String mimeType1, String mimeType2, OutputStream result) throws SVNException {
 			long newRevision = Long.parseLong(rev2.substring("(revision ".length(), rev2.length() - 1));
 			if (this.considerFile(path)) {
-				ResetOutStream resetOutStream = (ResetOutStream) result;
+				ResetOutputStream resetOutStream = (ResetOutputStream) result;
 				resetOutStream.initialize();
 				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
 				DiffStat diffStat = resetOutStream.finish();

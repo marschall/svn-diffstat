@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
-class ResetOutStream extends OutputStream {
+class ResetOutputStream extends OutputStream {
 	
 	private static final String INDEX_PREFIX = "Index: ";
 	private static final String MARKER = "===================================================================";
@@ -28,19 +28,19 @@ class ResetOutStream extends OutputStream {
 	private byte[] addedMarker;
 	private byte[] removedMarker;
 	private boolean headerParsed;
+	private String encoding;
 	
-	ResetOutStream() {
+	ResetOutputStream() {
 		this(0x4000);
 	}
 	
-	ResetOutStream(int capacity) {
+	ResetOutputStream(int capacity) {
 		this.data = new byte[capacity];
 		this.writePosition = 0;
 		this.readPosition = 0;
 		this.added = 0;
 		this.removed = 0;
 		this.headerParsed = false;
-		// FIXME
 		this.eol = System.getProperty("line.separator").getBytes();
 		this.setEncoding(System.getProperty("file.encoding"));
 	}
@@ -54,7 +54,14 @@ class ResetOutStream extends OutputStream {
 		this.headerParsed = false;
 	}
 	
+
+
+	void setEOL(byte[] eol) {
+		this.eol = eol;
+	}
+	
 	void setEncoding(String encoding) {
+		this.encoding = encoding;
 		try {
 			this.indexMarker = INDEX_PREFIX.getBytes(encoding);
 			this.marker = MARKER.getBytes(encoding);
@@ -158,8 +165,13 @@ class ResetOutStream extends OutputStream {
 	private void expectMarker(byte[] marker) throws IllegalAccessError {
 		boolean startsWithHeader = startsWith(marker);
 		if (!startsWithHeader) {
-			// TODO encoding
-			throw new IllegalArgumentException(new String(marker) + "expected");
+			try {
+				throw new IllegalArgumentException(new String(marker, this.encoding) + "expected");
+			} catch (UnsupportedEncodingException e) {
+				// this can't happen because we could previously decode strings
+				// with this this encoding 
+				throw new AssertionError("encoding " + this.encoding + " not supported");
+			}
 		}
 		this.readPosition += marker.length;
 	}

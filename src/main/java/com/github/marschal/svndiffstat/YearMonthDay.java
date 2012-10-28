@@ -103,6 +103,7 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 	
 	@Override
 	public int hashCode() {
+		// this should be a perfect hash function (no collisions before modulo / shift / divide)
 		return this.year << 16 | this.month << 8 | this.day;
 	}
 	
