@@ -9,7 +9,6 @@ This is very raw and not polished software. These are the steps that you need to
 
 Command Line Options
 --------------------
-
 The following command line options are supported:
 <dl>
 	<dt>-author -a</dt>
@@ -29,3 +28,14 @@ The following command line options are supported:
 For example
 
     java -Djava.awt.headless=true -jar svn-diffstat/target/svn-diffstat-1.0.0-SNAPSHOT.jar -d -a marschall -e java -f /Users/marschall/tmp/diffstat.png
+
+Credits
+-------
+This project wouldn't have been possible without the work of others:
+* [SVNKit](http://svnkit.com/), a Java Subversion implementation, used to extract all the information from Subversion, [TMate open source license](http://svnkit.com/license.html)
+* [JFreeChart](http://www.jfree.org/jfreechart/), a Java chart library, used to build the code frequency char, [GNU Lesser General Public License](http://www.gnu.org/licenses/lgpl.html) (LGPL)
+* [Joda-Time](http://joda-time.sourceforge.net), a Java date and time library, use for date calculations, [Apache 2.0 License](http://joda-time.sourceforge.net/license.html)
+* [JCommander](http://jcommander.org), a Java library to parse command line parameters, [Apache 2.0 License](https://github.com/cbeust/jcommander/blob/master/license.txt)
+
+Last but not least I'd like to thank [Netcetera](https://github.com/netceteragroup) for sponsoring the work on this. This was literally a one-weekend-hack as you can see from the commit logs.
+

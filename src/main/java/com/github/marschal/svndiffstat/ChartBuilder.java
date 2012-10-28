@@ -210,25 +210,21 @@ final class ChartBuilder {
 		int maximum = 0;
 		
 		TimeSeries addedSeries = new TimeSeries(name);
-		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
-			YearMonthDay yearMonthDay = entry.getKey();
-			DiffStat diffStat = entry.getValue();
-			Day day = yearMonthDay.toDay();
-			int added = diffStat.added();
-			maximum = max(maximum, added);
-			addedSeries.add(day, Integer.valueOf(added));    
-		}
-		dataset.addSeries(addedSeries);
-		
 		TimeSeries removedSeries = new TimeSeries(name);
 		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
 			YearMonthDay yearMonthDay = entry.getKey();
 			DiffStat diffStat = entry.getValue();
 			Day day = yearMonthDay.toDay();
+			
+			int added = diffStat.added();
+			maximum = max(maximum, added);
+			addedSeries.add(day, Integer.valueOf(added));    
+			
 			int removed = -diffStat.removed();
 			minimum = min(minimum, removed);
 			removedSeries.add(day, Integer.valueOf(removed));    
 		}
+		dataset.addSeries(addedSeries);
 		dataset.addSeries(removedSeries);
 		
 		return new XYDatasetMinMax(dataset, minimum, maximum);
