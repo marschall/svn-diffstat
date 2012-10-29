@@ -9,20 +9,34 @@ import java.util.Date;
 
 import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.Day;
+import org.jfree.data.time.RegularTimePeriod;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
 
-final class YearMonthDay implements Comparable<YearMonthDay> {
+final class YearMonthDay extends TimeAxisKey implements Comparable<YearMonthDay> {
 	
 	private final short year;
 	private final byte month;
 	private final byte day;
 	
-	YearMonthDay(short year, byte month, byte day) {
+	private YearMonthDay(short year, byte month, byte day) {
 		this.year = year;
 		this.month = month;
 		this.day = day;
+	}
+	
+	static final class YearMonthDayFactory implements TimeAxisKeyFactory {
+		
+		public YearMonthDay fromDate(Date date) {
+			return YearMonthDay.fromDate(date);
+		}
+	}
+	
+	static int daysBetween(Date first, Date second) {
+		LocalDate firstLocalDate = fromDate(first).toLocalDate();
+		LocalDate secondLocalDate = fromDate(second).toLocalDate();
+		return Days.daysBetween(firstLocalDate, secondLocalDate).getDays();
 	}
 	
 	static YearMonthDay fromDate(Date date) {
@@ -37,17 +51,18 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 				(byte) calendar.get(Calendar.DAY_OF_MONTH));
 	}
 	
-	Day toDay() {
+	RegularTimePeriod toPeriod() {
 		// compensate for the fact that java.util.Calendar months are 0-based
 		// and org.jfree.data.time.Day months are 1-based
 		return new Day(this.day, this.month + (1 - Calendar.JANUARY), this.year);
 	}
 	
-	LocalDate toLocalDate() {
+	private LocalDate toLocalDate() {
 		return new LocalDate(year, month, day);
 	}
 	
-	int unitsBetween(YearMonthDay other, DateTickUnitType type) {
+	int unitsBetween(TimeAxisKey key, DateTickUnitType type) {
+		YearMonthDay other = (YearMonthDay) key;
 		if (type == YEAR) {
 			return other.year - this.year;
 		} else if (type == MONTH) {
@@ -75,18 +90,6 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 		return calendar;
 	}
 	
-	int year() {
-		return this.year;
-	}
-	
-	int month() {
-		return this.month;
-	}
-	
-	int day() {
-		return this.day;
-	}
-
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
@@ -117,11 +120,7 @@ final class YearMonthDay implements Comparable<YearMonthDay> {
 		if (monthDiff != 0) {
 			return monthDiff;
 		}
-		int dayDiff = this.day - o.day;
-		if (dayDiff != 0) {
-			return dayDiff;
-		}
-		return 0;
+		return this.day - o.day;
 	}
 	
 	@Override

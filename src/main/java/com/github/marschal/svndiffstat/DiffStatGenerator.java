@@ -23,11 +23,15 @@ import org.tmatesoft.svn.core.wc.SVNClientManager;
 import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
+import com.github.marschal.svndiffstat.TimeAxisKey.TimeAxisKeyFactory;
+import com.github.marschal.svndiffstat.YearMonth.YearMonthFactory;
+import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
+
 
 class DiffStatGenerator {
 	
 	
-	static NavigableMap<YearMonthDay,DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+	static NavigableMap<TimeAxisKey, DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
 		SVNClientManager clientManager = SVNClientManager.newInstance();
 		
 		reporter.startRevisionLogging();
@@ -39,43 +43,57 @@ class DiffStatGenerator {
 		reporter.revisionParsinDone(diffStats);
 		
 		reporter.startAggregation();
-		NavigableMap<YearMonthDay,DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
+		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
 		reporter.aggregationDone(aggregatedDiffstats);
 		
 		return aggregatedDiffstats;
 	}
 	
-	private static NavigableMap<YearMonthDay, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
+	private static NavigableMap<TimeAxisKey, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
 		if (coordinates.isEmpty()) {
 			return new TreeMap<>();
 		}
 		
-		Map<Long, YearMonthDay> revisionToDateMap = buildRevisionToDateMap(coordinates);
+		TimeAxisKeyFactory factory = getFactory(coordinates);
 		
-		YearMonthDay fakeStart = YearMonthDay.fromDate(coordinates.get(0).getDate()).previous();
-		NavigableMap<YearMonthDay, DiffStat> aggregatedDiffstats = new TreeMap<>();
+		Map<Long, TimeAxisKey> revisionToDateMap = buildRevisionToDateMap(coordinates, factory);
+		
+		TimeAxisKey fakeStart = factory.fromDate(coordinates.get(0).getDate()).previous();
+		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = new TreeMap<>();
 		aggregatedDiffstats.put(fakeStart, new DiffStat(0, 0));
 		for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
 			Long revision = entry.getKey();
-			YearMonthDay yearMonthDay = revisionToDateMap.get(revision);
-			DiffStat oldDiffStat = aggregatedDiffstats.get(yearMonthDay);
+			TimeAxisKey timeKey = revisionToDateMap.get(revision);
+			DiffStat oldDiffStat = aggregatedDiffstats.get(timeKey);
 			DiffStat diffStat = entry.getValue();
 			if (oldDiffStat != null) {
 				oldDiffStat.add(diffStat);
 			} else {
-				aggregatedDiffstats.put(yearMonthDay, diffStat);
+				aggregatedDiffstats.put(timeKey, diffStat);
 			}
 		}
 		return aggregatedDiffstats;
 	}
+	
+	private static TimeAxisKeyFactory getFactory(List<CommitCoordinate> coordinates) {
+		Date first = coordinates.get(0).getDate();
+		Date last = coordinates.get(coordinates.size() - 1).getDate();
+		
+		if (YearMonthDay.daysBetween(first, last) >= 100) {
+			return new YearMonthFactory();
+		} else {
+			return new YearMonthDayFactory();
+		}
+		
+	}
 
-	private static Map<Long, YearMonthDay> buildRevisionToDateMap(List<CommitCoordinate> coordinates) {
-		Map<Long, YearMonthDay> revisionToDateMap = new HashMap<>(coordinates.size());
+	private static Map<Long, TimeAxisKey> buildRevisionToDateMap(List<CommitCoordinate> coordinates, TimeAxisKeyFactory factory) {
+		Map<Long, TimeAxisKey> revisionToDateMap = new HashMap<>(coordinates.size());
 		for (CommitCoordinate commitCoordinate : coordinates) {
 			Date date = commitCoordinate.getDate();
 			long revision = commitCoordinate.getRevision();
-			YearMonthDay yearMonthDay = YearMonthDay.fromDate(date);
-			revisionToDateMap.put(revision, yearMonthDay);
+			TimeAxisKey timeAxisKey = factory.fromDate(date);
+			revisionToDateMap.put(revision, timeAxisKey);
 		}
 		return revisionToDateMap;
 	}

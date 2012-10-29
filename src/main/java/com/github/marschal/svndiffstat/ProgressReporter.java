@@ -31,7 +31,7 @@ final class ProgressReporter {
 		this.loggingStart = System.currentTimeMillis();
 	}
 	
-	void revisionLoggingDone(List<CommitCoordinate> coordinates) {
+	void revisionLoggingDone(List<?> coordinates) {
 		long loggingEnd = System.currentTimeMillis();
 		long duration = loggingEnd - this.loggingStart;
 		if (duration >= 2000) {
@@ -45,15 +45,15 @@ final class ProgressReporter {
 		long now = System.currentTimeMillis();
 		if (now - lastRevisionLoggedTime >= LOG_INTERVAL) {
 			this.out.println("logged revsion: " + revision);
+			this.lastRevisionLoggedTime = now;
 		}
-		this.lastRevisionLoggedTime = now;
 	}
 	
 	void startRevisionParsing() {
 		this.parsingStart = System.currentTimeMillis();
 	}
 	
-	void revisionParsinDone(Map<Long, DiffStat> diffStats) {
+	void revisionParsinDone(Map<?, DiffStat> diffStats) {
 		long parsingEnd = System.currentTimeMillis();
 		long duration = parsingEnd - this.parsingStart;
 		if (duration >= 2000) {
@@ -74,10 +74,9 @@ final class ProgressReporter {
 		if (this.lastParsedRevision != revision) {
 			if (now - this.lastRevisionParsedTime >= LOG_INTERVAL) {
 				this.out.println("parsed revision: " + revision);
+				this.lastParsedRevision = revision;
+				this.lastRevisionParsedTime = now;
 			}
-			
-			this.lastParsedRevision = revision;
-			this.lastRevisionParsedTime = now;
 		}
 	}
 
@@ -85,7 +84,7 @@ final class ProgressReporter {
 		this.aggregationStart = System.currentTimeMillis();
 	}
 
-	void aggregationDone(SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+	void aggregationDone(SortedMap<?, ?> aggregatedDiffstats) {
 		long aggregationEnd = System.currentTimeMillis();
 		long duration = aggregationEnd - this.aggregationStart;
 		if (duration >= 2000) {

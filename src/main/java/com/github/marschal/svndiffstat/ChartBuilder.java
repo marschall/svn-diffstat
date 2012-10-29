@@ -34,6 +34,7 @@ import org.jfree.chart.renderer.xy.XYAreaRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.data.RangeType;
 import org.jfree.data.time.Day;
+import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
@@ -73,7 +74,7 @@ final class ChartBuilder {
 		});
 	}
 	
-	static JFreeChart createChart(NavigableMap<YearMonthDay, DiffStat> aggregatedDiffstats, DiffStatConfiguration configuration) {
+	static JFreeChart createChart(NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats, DiffStatConfiguration configuration) {
 		
 		boolean legend = false;
         boolean tooltips = false;
@@ -170,21 +171,21 @@ final class ChartBuilder {
         return chart;
 	}
 	
-	static DateTickUnit computeDateTickUnit(NavigableMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
-		YearMonthDay start = aggregatedDiffstats.firstKey();
-		YearMonthDay lastKey = aggregatedDiffstats.lastKey();
+	static DateTickUnit computeDateTickUnit(NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
+		TimeAxisKey start = aggregatedDiffstats.firstKey();
+		TimeAxisKey end = aggregatedDiffstats.lastKey();
 		
-		int yearsBetween = start.unitsBetween(lastKey, DateTickUnitType.YEAR);
+		int yearsBetween = start.unitsBetween(end, DateTickUnitType.YEAR);
 		if (yearsBetween >= 5) {
 			return new DateTickUnit(DateTickUnitType.YEAR, computeTickUnitSize(yearsBetween));
 		}
 		
-		int monthsBetween = start.unitsBetween(lastKey, DateTickUnitType.MONTH);
+		int monthsBetween = start.unitsBetween(end, DateTickUnitType.MONTH);
 		if (monthsBetween >= 5) {
 			return new DateTickUnit(DateTickUnitType.MONTH, computeTickUnitSize(monthsBetween));
 		}
 		
-		int daysBetween = start.unitsBetween(lastKey, DateTickUnitType.DAY);
+		int daysBetween = start.unitsBetween(end, DateTickUnitType.DAY);
 		return new DateTickUnit(DateTickUnitType.DAY, computeTickUnitSize(daysBetween));
 	}
 	
@@ -203,7 +204,7 @@ final class ChartBuilder {
 		}
 	}
 	
-	private static XYDatasetMinMax createDeltaDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+	private static XYDatasetMinMax createDeltaDataset(String name, SortedMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
 
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
 		int minimum = 0;
@@ -211,18 +212,18 @@ final class ChartBuilder {
 		
 		TimeSeries addedSeries = new TimeSeries(name);
 		TimeSeries removedSeries = new TimeSeries(name);
-		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
-			YearMonthDay yearMonthDay = entry.getKey();
+		for (Entry<TimeAxisKey, DiffStat> entry : aggregatedDiffstats.entrySet()) {
+			TimeAxisKey timeAxisKey = entry.getKey();
 			DiffStat diffStat = entry.getValue();
-			Day day = yearMonthDay.toDay();
+			RegularTimePeriod period = timeAxisKey.toPeriod();
 			
 			int added = diffStat.added();
 			maximum = max(maximum, added);
-			addedSeries.add(day, Integer.valueOf(added));    
+			addedSeries.add(period, Integer.valueOf(added));    
 			
 			int removed = -diffStat.removed();
 			minimum = min(minimum, removed);
-			removedSeries.add(day, Integer.valueOf(removed));    
+			removedSeries.add(period, Integer.valueOf(removed));    
 		}
 		dataset.addSeries(addedSeries);
 		dataset.addSeries(removedSeries);
@@ -230,16 +231,16 @@ final class ChartBuilder {
 		return new XYDatasetMinMax(dataset, minimum, maximum);
 	}
 	
-	private static XYDatasetAndTotal createTotalDataset(String name, SortedMap<YearMonthDay, DiffStat> aggregatedDiffstats) {
+	private static XYDatasetAndTotal createTotalDataset(String name, SortedMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
 		int total = 0;
 		
 		TimeSeries totalSeries = new TimeSeries(name);
-		for (Entry<YearMonthDay, DiffStat> entry : aggregatedDiffstats.entrySet()) {
-			YearMonthDay yearMonthDay = entry.getKey();
+		for (Entry<TimeAxisKey, DiffStat> entry : aggregatedDiffstats.entrySet()) {
+			TimeAxisKey timeAxisKey = entry.getKey();
 			DiffStat diffStat = entry.getValue();
-			Day day = yearMonthDay.toDay();
+			RegularTimePeriod period = timeAxisKey.toPeriod();
 			total += diffStat.delta();
-			totalSeries.add(day, Integer.valueOf(total));    
+			totalSeries.add(period, Integer.valueOf(total));    
 		}
 		
 		TimeSeriesCollection dataset = new TimeSeriesCollection();

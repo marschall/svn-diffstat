@@ -26,12 +26,12 @@ public class Main {
 		DiffStatConfiguration configuration = parse(args);
 		init();
 		ProgressReporter reporter = new ProgressReporter(System.out);
-		NavigableMap<YearMonthDay, DiffStat> aggregatedDiffStats = DiffStatGenerator.getData(configuration, reporter);
+		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats = DiffStatGenerator.getData(configuration, reporter);
 		
 		saveAndDisplayChart(configuration, aggregatedDiffStats, reporter);
 	}
 
-	private static void saveAndDisplayChart(DiffStatConfiguration configuration, NavigableMap<YearMonthDay, DiffStat> aggregatedDiffStats, ProgressReporter reporter) throws IOException {
+	private static void saveAndDisplayChart(DiffStatConfiguration configuration, NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats, ProgressReporter reporter) throws IOException {
 		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats, configuration);
 		Path savePath = configuration.getSavePath();
 		if (savePath != null) {
