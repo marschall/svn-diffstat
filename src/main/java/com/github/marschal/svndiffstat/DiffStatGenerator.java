@@ -46,6 +46,10 @@ class DiffStatGenerator {
 	}
 	
 	private static NavigableMap<YearMonthDay, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
+		if (coordinates.isEmpty()) {
+			return new TreeMap<>();
+		}
+		
 		Map<Long, YearMonthDay> revisionToDateMap = buildRevisionToDateMap(coordinates);
 		
 		YearMonthDay fakeStart = YearMonthDay.fromDate(coordinates.get(0).getDate()).previous();
@@ -96,7 +100,7 @@ class DiffStatGenerator {
 
 		ResetOutputStream result = new ResetOutputStream();
 		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(),
-				configuration.getIncludedFiles(), reporter, result);
+				configuration, reporter, result);
 		diffClient.setDiffGenerator(diffGenerator);
 		SVNDepth depth = SVNDepth.INFINITY;
 		boolean useAncestry = true;
@@ -153,13 +157,15 @@ class DiffStatGenerator {
 		private final Set<String> includedFileExtensions;
 		private final ProgressReporter reporter;
 		private final ResetOutputStream output;
+		private final int maxChanges;
 		
-		DiffStatDiffGenerator(ISVNDiffGenerator delegate, Set<String> includedFileExtensions, ProgressReporter reporter, ResetOutputStream output) {
+		DiffStatDiffGenerator(ISVNDiffGenerator delegate, DiffStatConfiguration configuration, ProgressReporter reporter, ResetOutputStream output) {
 			this.delegate = delegate;
-			this.includedFileExtensions = includedFileExtensions;
+			this.includedFileExtensions = configuration.getIncludedFiles();
 			this.reporter = reporter;
 			this.output = output;
 			this.diffStats = new HashMap<>();
+			this.maxChanges = configuration.getMaxChanges();
 		}
 		
 		Map<Long, DiffStat> getDiffStats() {
@@ -270,7 +276,9 @@ class DiffStatGenerator {
 				resetOutStream.initialize();
 				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
 				DiffStat diffStat = resetOutStream.finish();
-				this.addDiffStat(newRevision, diffStat);
+				if (diffStat.added() <= this.maxChanges && diffStat.removed() <= this.maxChanges) {
+					this.addDiffStat(newRevision, diffStat);
+				}
 			}
 			reporter.revisionParsed(newRevision);
 		}

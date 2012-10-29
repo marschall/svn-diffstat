@@ -13,14 +13,16 @@ final class DiffStatConfiguration {
 	private final Dimension dimension;
 	private final Path savePath;
 	private final boolean doubleSize;
+	private final int maxChanges;
 	
-	DiffStatConfiguration(Set<String> authors, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize) {
+	DiffStatConfiguration(Set<String> authors, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize, int maxChanges) {
 		this.authors = authors;
 		this.includedFiles = includedFiles;
 		this.workingCopy = workingCopy;
 		this.dimension = dimension;
 		this.savePath = savePath;
 		this.doubleSize = doubleSize;
+		this.maxChanges = maxChanges;
 	}
 	
 	Set<String> getAuthors() {
@@ -57,6 +59,10 @@ final class DiffStatConfiguration {
 	
 	boolean isDoubleSize() {
 		return this.doubleSize;
+	}
+	
+	int getMaxChanges() {
+		return this.maxChanges;
 	}
 	
 

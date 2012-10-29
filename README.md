@@ -13,21 +13,39 @@ The following command line options are supported:
 <dl>
 	<dt>-author -a</dt>
 	<dd>Required. The authors that should be analyzed.</dd>
-	<dt>-extension -e</dt>
-	<dd>Required. The file extensions that should be analyzed.</dd>
 	<dt>-file -f</dt>
 	<dd>Required. The file where to save the generated chart. Will always be a PNG.</dd>
+	<dt>-extension -e</dt>
+	<dd>Optional. The file extensions that should be analyzed.</dd>
 	<dt>-width -w</dt>
 	<dd>Optional. The width of the chart in pixels. Defaults to <code>1200</code>.</dd>
 	<dt>-height -h</dt>
 	<dd>Optional. The height of the chart in pixels. Defaults to <code>600</code>.</dd>
 	<dt>-double -d -retina -r</dt>
 	<dd>Optional. Render in double the resolution, useful for retina Macs. Defaults to <code>false</code>.</dd>
+	<dt>-max -m</dt>
+	<dd>Optional. Commits with more than this number of lines changed will be ignored. Defaults to <code>10000</code>.</dd>
 </dl>
 
 For example
 
     java -Djava.awt.headless=true -jar svn-diffstat/target/svn-diffstat-1.0.0-SNAPSHOT.jar -d -a marschall -e java -f /Users/marschall/tmp/diffstat.png
+    
+FAQ
+---
+
+### I'm getting NonWritableChannelException
+```
+Exception in thread "main" java.nio.channels.NonWritableChannelException
+        at sun.nio.ch.FileChannelImpl.tryLock(FileChannelImpl.java:1014)
+```
+Just try again.
+
+### Does it scale?
+I ran it on a subversion repository with about 240k revisions and it takes about 20 minutes.
+
+### Is it any good?
+Yes
 
 Credits
 -------

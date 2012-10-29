@@ -61,12 +61,13 @@ public class Main {
 		Set<String> extensions = toSet(configuration.extensions);
 		Path savePath = Paths.get(configuration.savePath);
 		boolean doubleSize = configuration.doubleSize;
-		return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize);
+		return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max);
 	}
 	
 	static <T> Set<T> toSet(List<T> list) {
 		if (list.isEmpty()) {
-			throw new IllegalArgumentException("must not be empty");
+			// a set containing everything
+			return new FullSet<>();
 		}
 		if (list.size() == 1) {
 			return Collections.singleton(list.get(0));

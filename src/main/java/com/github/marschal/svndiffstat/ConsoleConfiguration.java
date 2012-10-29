@@ -18,14 +18,17 @@ public class ConsoleConfiguration {
 			description = "The height of the chart in pixels")
 	int height = 600;
 	
+	@Parameter(names = {"-max", "-m"},
+			description = "Commits with more than this number of lines changed will be ignored.")
+	int max = 10000;
+	
 	@Parameter(names = {"-author", "-a"},
 			description = "The authors that should be analyzed",
 			required = true)
 	List<String> authors;
 	
 	@Parameter(names = {"-extension", "-e"},
-			description = "The file extensions that should be analized",
-			required = true)
+			description = "The file extensions that should be analized")
 	List<String> extensions;
 	
 	@Parameter(names = {"-file", "-f"},
