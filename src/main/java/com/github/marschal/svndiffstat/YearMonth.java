@@ -1,23 +1,20 @@
 package com.github.marschal.svndiffstat;
 
-import static org.jfree.chart.axis.DateTickUnitType.MONTH;
-import static org.jfree.chart.axis.DateTickUnitType.YEAR;
-
 import java.util.Calendar;
 import java.util.Date;
 
 import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.Week;
-import org.joda.time.DateTimeFieldType;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
-import org.joda.time.Partial;
 import org.joda.time.ReadablePartial;
+
+import static org.jfree.chart.axis.DateTickUnitType.MONTH;
+import static org.jfree.chart.axis.DateTickUnitType.YEAR;
 
 final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
 	
-	private static final DateTimeFieldType[] YEAR_WEEK = new DateTimeFieldType[]{DateTimeFieldType.year(), DateTimeFieldType.weekOfWeekyear()};
 	private final short year;
 	private final byte week;
 	

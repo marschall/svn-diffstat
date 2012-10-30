@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,9 +45,23 @@ class DiffStatGenerator {
 		
 		reporter.startAggregation();
 		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
+		removeTooLargeValues(aggregatedDiffstats, configuration);
 		reporter.aggregationDone(aggregatedDiffstats);
 		
 		return aggregatedDiffstats;
+	}
+	
+	private static void removeTooLargeValues(NavigableMap<TimeAxisKey, DiffStat> diffStats, DiffStatConfiguration configuration) {
+	  Iterator<Entry<TimeAxisKey, DiffStat>> entrySetIterator = diffStats.entrySet().iterator();
+	  while (entrySetIterator.hasNext()) {
+            Entry<TimeAxisKey, DiffStat> entry = entrySetIterator.next();
+            DiffStat diffStat = entry.getValue();
+            if (diffStat.added() > configuration.getMaxChanges() || diffStat.removed() > configuration.getMaxChanges()) {
+              entrySetIterator.remove();
+            }
+            
+          }
+	  
 	}
 	
 	private static NavigableMap<TimeAxisKey, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {

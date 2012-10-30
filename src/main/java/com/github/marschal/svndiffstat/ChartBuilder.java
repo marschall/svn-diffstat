@@ -1,13 +1,5 @@
 package com.github.marschal.svndiffstat;
 
-import static java.awt.BasicStroke.CAP_ROUND;
-import static java.awt.BasicStroke.JOIN_ROUND;
-import static java.awt.Color.WHITE;
-import static java.lang.Math.abs;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static org.jfree.chart.plot.PlotOrientation.VERTICAL;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -33,12 +25,19 @@ import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.chart.renderer.xy.XYAreaRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.data.RangeType;
-import org.jfree.data.time.Day;
 import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.ui.RectangleInsets;
+
+import static java.awt.BasicStroke.CAP_ROUND;
+import static java.awt.BasicStroke.JOIN_ROUND;
+import static java.awt.Color.WHITE;
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static org.jfree.chart.plot.PlotOrientation.VERTICAL;
 
 final class ChartBuilder {
 	

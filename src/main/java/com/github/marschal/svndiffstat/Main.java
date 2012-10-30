@@ -24,6 +24,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException, SVNException {
 		DiffStatConfiguration configuration = parse(args);
+		System.out.println("max arguments: " + configuration.getMaxChanges());
 		init();
 		ProgressReporter reporter = new ProgressReporter(System.out);
 		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats = DiffStatGenerator.getData(configuration, reporter);

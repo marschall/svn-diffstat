@@ -1,11 +1,11 @@
 package com.github.marschal.svndiffstat;
 
-import static org.junit.Assert.assertEquals;
-
 import java.text.NumberFormat;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class AbbreviatingNumberFormatTest {
 	
