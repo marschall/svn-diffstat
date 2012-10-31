@@ -19,11 +19,16 @@ import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 
 import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
 
 public class Main {
 
   public static void main(String[] args) throws IOException, SVNException {
     DiffStatConfiguration configuration = parse(args);
+    if (configuration == null) {
+      return;
+    }
+    
     init();
     ProgressReporter reporter = new ProgressReporter(System.out);
     NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats = DiffStatGenerator.getData(configuration, reporter);
@@ -58,7 +63,13 @@ public class Main {
 
   private static DiffStatConfiguration parse(String[] args) {
     ConsoleConfiguration configuration = new ConsoleConfiguration();
-    JCommander commander = new JCommander(configuration, args);
+    JCommander commander = new JCommander(configuration);
+    try {
+      commander.parse(args);
+    } catch (ParameterException e) {
+      commander.usage();
+      return null;
+    }
 
     File workingCopy = new File("").getAbsoluteFile();
     Dimension dimension = new Dimension(configuration.width, configuration.height);
