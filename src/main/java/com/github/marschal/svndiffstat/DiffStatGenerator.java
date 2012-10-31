@@ -59,7 +59,7 @@ class DiffStatGenerator {
    * 
    * This makes the chart "spikier" but avoids boxes during large periods of inactivity.
    */
-  private static void insertZeroDataPoints(NavigableMap<TimeAxisKey, DiffStat> diffStats) {
+  static void insertZeroDataPoints(NavigableMap<TimeAxisKey, DiffStat> diffStats) {
     if (diffStats.size() < 2) {
       return;
     }
@@ -71,7 +71,7 @@ class DiffStatGenerator {
         diffStats.put(nextKeyInRange, new DiffStat(0, 0));
         
         TimeAxisKey previousKeyInRange = nextKeyInMap.previous();
-        if (previousKeyInRange.equals(nextKeyInRange)) {
+        if (!previousKeyInRange.equals(nextKeyInMap)) {
           diffStats.put(previousKeyInRange, new DiffStat(0, 0));
         }
       }

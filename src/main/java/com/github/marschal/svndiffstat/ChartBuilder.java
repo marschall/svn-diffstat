@@ -184,6 +184,7 @@ final class ChartBuilder {
       return new DateTickUnit(DateTickUnitType.MONTH, computeTickUnitSize(monthsBetween));
     }
 
+    // TODO check if day is supported
     int daysBetween = start.unitsBetween(end, DateTickUnitType.DAY);
     return new DateTickUnit(DateTickUnitType.DAY, computeTickUnitSize(daysBetween));
   }

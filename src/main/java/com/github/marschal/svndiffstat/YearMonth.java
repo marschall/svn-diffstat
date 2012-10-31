@@ -18,7 +18,7 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
   private final short year;
   private final byte week;
 
-  private YearMonth(short year, byte week) {
+  YearMonth(short year, byte week) {
     this.year = year;
     this.week = week;
   }
