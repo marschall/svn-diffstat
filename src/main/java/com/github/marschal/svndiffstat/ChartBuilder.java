@@ -197,7 +197,7 @@ final class ChartBuilder {
     int numberOfTicks = maximum / tenbase;
     if (numberOfTicks == 1) {
       return tenbase / 10;
-    } else if (numberOfTicks <= 5) {
+    } else if (numberOfTicks <= 5 && tenbase > 10) {
       return tenbase / 2;
     } else {
       return tenbase;

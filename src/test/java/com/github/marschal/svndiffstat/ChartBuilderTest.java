@@ -8,6 +8,9 @@ public class ChartBuilderTest {
 
   @Test
   public void computeTickUnitSize() {
+    assertEquals(1, ChartBuilder.computeTickUnitSize(4));
+    assertEquals(1, ChartBuilder.computeTickUnitSize(10));
+    
     assertEquals(500, ChartBuilder.computeTickUnitSize(4000));
     assertEquals(500, ChartBuilder.computeTickUnitSize(4500));
     assertEquals(500, ChartBuilder.computeTickUnitSize(5000));
