@@ -30,341 +30,365 @@ import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
 
 
 class DiffStatGenerator {
-	
-	
-	static NavigableMap<TimeAxisKey, DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
-		SVNClientManager clientManager = SVNClientManager.newInstance();
-		
-		reporter.startRevisionLogging();
-		List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, configuration, reporter);
-		reporter.revisionLoggingDone(coordinates);
-		
-		reporter.startRevisionParsing();
-		Map<Long, DiffStat> diffStats = getDiffStats(clientManager, coordinates, configuration, reporter);
-		reporter.revisionParsinDone(diffStats);
-		
-		reporter.startAggregation();
-		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
-		removeTooLargeValues(aggregatedDiffstats, configuration);
-		reporter.aggregationDone(aggregatedDiffstats);
-		
-		return aggregatedDiffstats;
-	}
-	
-	private static void removeTooLargeValues(NavigableMap<TimeAxisKey, DiffStat> diffStats, DiffStatConfiguration configuration) {
-	  Iterator<Entry<TimeAxisKey, DiffStat>> entrySetIterator = diffStats.entrySet().iterator();
-	  while (entrySetIterator.hasNext()) {
-            Entry<TimeAxisKey, DiffStat> entry = entrySetIterator.next();
-            DiffStat diffStat = entry.getValue();
-            if (diffStat.added() > configuration.getMaxChanges() || diffStat.removed() > configuration.getMaxChanges()) {
-              entrySetIterator.remove();
-            }
-            
-          }
-	  
-	}
-	
-	private static NavigableMap<TimeAxisKey, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
-		if (coordinates.isEmpty()) {
-			return new TreeMap<>();
-		}
-		
-		TimeAxisKeyFactory factory = getFactory(coordinates);
-		
-		Map<Long, TimeAxisKey> revisionToDateMap = buildRevisionToDateMap(coordinates, factory);
-		
-		TimeAxisKey fakeStart = factory.fromDate(coordinates.get(0).getDate()).previous();
-		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = new TreeMap<>();
-		aggregatedDiffstats.put(fakeStart, new DiffStat(0, 0));
-		for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
-			Long revision = entry.getKey();
-			TimeAxisKey timeKey = revisionToDateMap.get(revision);
-			DiffStat oldDiffStat = aggregatedDiffstats.get(timeKey);
-			DiffStat diffStat = entry.getValue();
-			if (oldDiffStat != null) {
-				oldDiffStat.add(diffStat);
-			} else {
-				aggregatedDiffstats.put(timeKey, diffStat);
-			}
-		}
-		return aggregatedDiffstats;
-	}
-	
-	private static TimeAxisKeyFactory getFactory(List<CommitCoordinate> coordinates) {
-		Date first = coordinates.get(0).getDate();
-		Date last = coordinates.get(coordinates.size() - 1).getDate();
-		
-		if (YearMonthDay.daysBetween(first, last) >= 100) {
-			return new YearMonthFactory();
-		} else {
-			return new YearMonthDayFactory();
-		}
-		
-	}
-
-	private static Map<Long, TimeAxisKey> buildRevisionToDateMap(List<CommitCoordinate> coordinates, TimeAxisKeyFactory factory) {
-		Map<Long, TimeAxisKey> revisionToDateMap = new HashMap<>(coordinates.size());
-		for (CommitCoordinate commitCoordinate : coordinates) {
-			Date date = commitCoordinate.getDate();
-			long revision = commitCoordinate.getRevision();
-			TimeAxisKey timeAxisKey = factory.fromDate(date);
-			revisionToDateMap.put(revision, timeAxisKey);
-		}
-		return revisionToDateMap;
-	}
-	
-	private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
-//		SVNURL repoUrl = SVNURL.parseURIEncoded("file:///Users/marschall/svn/memoryfilesystem");
-		boolean stopOnCopy = true;
-		boolean discoverChangedPaths = false;
-		SVNRevision startRevision = SVNRevision.create(1L);
-		SVNRevision endRevision = SVNRevision.HEAD;
-
-		File[] paths = new File[]{configuration.getWorkingCopy()};
-		RevisionCollector logHandler = new RevisionCollector(configuration.getAuthors(), reporter);
-		long limit = Long.MAX_VALUE;
-		clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
-				limit, logHandler);
-		return logHandler.getCoordinates();
-	}
-	
-	private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, List<CommitCoordinate> coordinates, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
-		SVNDiffClient diffClient = clientManager.getDiffClient();
-
-		ResetOutputStream result = new ResetOutputStream();
-		DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(),
-				configuration, reporter, result);
-		diffClient.setDiffGenerator(diffGenerator);
-		SVNDepth depth = SVNDepth.INFINITY;
-		boolean useAncestry = true;
-//		diffClient.setGitDiffFormat(true);
-		Collection<String> changeLists = null;
-		File workingCopy = configuration.getWorkingCopy();
-		for (CommitCoordinate coordinate : coordinates) {
-			long revision = coordinate.getRevision();
-			SVNRevision newRevision = SVNRevision.create(revision);
-			SVNRevision oldRevision = SVNRevision.create(revision - 1L);
-			diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
-		}
-		
-		return diffGenerator.getDiffStats();
-	}
-
-	
-	static final class RevisionCollector implements ISVNLogEntryHandler {
-		
-		private final Set<String> authors;
-		private final List<CommitCoordinate> coordinates;
-		private final ProgressReporter reporter;
-		
-		RevisionCollector(Set<String> authors, ProgressReporter reporter) {
-			this.authors = authors;
-			this.reporter = reporter;
-			this.coordinates = new ArrayList<>();
-		}
 
 
-		@Override
-		public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
-			long revision = logEntry.getRevision();
-			String logEntryAuthor = logEntry.getAuthor();
-			if (this.authors.contains(logEntryAuthor)) {
-				Date date = logEntry.getDate();
-				CommitCoordinate coordinate = new CommitCoordinate(revision, date);
-				this.coordinates.add(coordinate);
-			}
-			reporter.revisionLogged(revision);
-			
-		}
-		
-		List<CommitCoordinate> getCoordinates() {
-			return coordinates;
-		}
-		
-	}
-	
-	static final class DiffStatDiffGenerator implements ISVNDiffGenerator {
-		
-		private final ISVNDiffGenerator delegate;
-		private final Map<Long, DiffStat> diffStats;
-		private final Set<String> includedFileExtensions;
-		private final ProgressReporter reporter;
-		private final ResetOutputStream output;
-		private final int maxChanges;
-		
-		DiffStatDiffGenerator(ISVNDiffGenerator delegate, DiffStatConfiguration configuration, ProgressReporter reporter, ResetOutputStream output) {
-			this.delegate = delegate;
-			this.includedFileExtensions = configuration.getIncludedFiles();
-			this.reporter = reporter;
-			this.output = output;
-			this.diffStats = new HashMap<>();
-			this.maxChanges = configuration.getMaxChanges();
-		}
-		
-		Map<Long, DiffStat> getDiffStats() {
-			return this.diffStats;
-		}
-		
-		void clearDiffStats() {
-			this.diffStats.clear();
-		}
+  static NavigableMap<TimeAxisKey, DiffStat> getData(DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+    SVNClientManager clientManager = SVNClientManager.newInstance();
 
-		@Override
-		public void init(String anchorPath1, String anchorPath2) {
-			this.delegate.init(anchorPath1, anchorPath2);
-		}
+    reporter.startRevisionLogging();
+    List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, configuration, reporter);
+    reporter.revisionLoggingDone(coordinates);
 
-		@Override
-		public void setBasePath(File basePath) {
-			this.delegate.setBasePath(basePath);
-		}
+    reporter.startRevisionParsing();
+    Map<Long, DiffStat> diffStats = getDiffStats(clientManager, coordinates, configuration, reporter);
+    reporter.revisionParsinDone(diffStats);
 
-		@Override
-		public void setForcedBinaryDiff(boolean forced) {
-			this.delegate.setForcedBinaryDiff(forced);
-		}
+    reporter.startAggregation();
+    removeTooLargeValues(diffStats, configuration);
+    NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
+    insertZeroDataPoints(aggregatedDiffstats);
+    reporter.aggregationDone(aggregatedDiffstats);
 
-		@Override
-		public boolean isForcedBinaryDiff() {
-			return this.delegate.isForcedBinaryDiff();
-		}
+    return aggregatedDiffstats;
+  }
+  
 
-		@Override
-		public void setEncoding(String encoding) {
-			this.delegate.setEncoding(encoding);
-			this.output.setEncoding(encoding);
-		}
+  /**
+   * If two consecutive data points are more than one tick away add one or tow
+   * zero data points between them.
+   * 
+   * This makes the chart "spikier" but avoids boxes during large periods of inactivity.
+   */
+  private static void insertZeroDataPoints(NavigableMap<TimeAxisKey, DiffStat> diffStats) {
+    if (diffStats.size() < 2) {
+      return;
+    }
+    TimeAxisKey previousKeyInMap = diffStats.firstKey();
+    TimeAxisKey nextKeyInMap = diffStats.higherKey(previousKeyInMap);
+    while (nextKeyInMap != null) {
+      TimeAxisKey nextKeyInRange = previousKeyInMap.next();
+      if (!nextKeyInMap.equals(nextKeyInRange)) {
+        diffStats.put(nextKeyInRange, new DiffStat(0, 0));
+        
+        TimeAxisKey previousKeyInRange = nextKeyInMap.previous();
+        if (previousKeyInRange.equals(nextKeyInRange)) {
+          diffStats.put(previousKeyInRange, new DiffStat(0, 0));
+        }
+      }
+      
+      previousKeyInMap = nextKeyInMap;
+      nextKeyInMap = diffStats.higherKey(previousKeyInMap);
+    }
+  }
+  
 
-		@Override
-		public String getEncoding() {
-			return this.delegate.getEncoding();
-		}
+  private static void removeTooLargeValues(Map<Long, DiffStat> diffStats, DiffStatConfiguration configuration) {
+    Iterator<Entry<Long, DiffStat>> entrySetIterator = diffStats.entrySet().iterator();
+    while (entrySetIterator.hasNext()) {
+      Entry<Long, DiffStat> entry = entrySetIterator.next();
+      DiffStat diffStat = entry.getValue();
+      if (diffStat.added() > configuration.getMaxChanges() || diffStat.removed() > configuration.getMaxChanges()) {
+        entrySetIterator.remove();
+      }
+    }
+  }
 
-		@Override
-		public void setEOL(byte[] eol) {
-			this.delegate.setEOL(eol);
-			this.output.setEOL(eol);
-		}
+  private static NavigableMap<TimeAxisKey, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
+    if (coordinates.isEmpty()) {
+      return new TreeMap<>();
+    }
 
-		@Override
-		public byte[] getEOL() {
-			return this.delegate.getEOL();
-		}
+    TimeAxisKeyFactory factory = getFactory(coordinates);
 
-		@Override
-		public void setDiffDeleted(boolean isDiffDeleted) {
-			this.delegate.setDiffDeleted(isDiffDeleted);
-		}
+    Map<Long, TimeAxisKey> revisionToDateMap = buildRevisionToDateMap(coordinates, factory);
 
-		@Override
-		public boolean isDiffDeleted() {
-			return this.delegate.isDiffDeleted();
-		}
+    TimeAxisKey fakeStart = factory.fromDate(coordinates.get(0).getDate()).previous();
+    NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = new TreeMap<>();
+    aggregatedDiffstats.put(fakeStart, new DiffStat(0, 0));
+    for (Entry<Long, DiffStat> entry : diffStats.entrySet()) {
+      Long revision = entry.getKey();
+      TimeAxisKey timeKey = revisionToDateMap.get(revision);
+      DiffStat oldDiffStat = aggregatedDiffstats.get(timeKey);
+      DiffStat diffStat = entry.getValue();
+      if (oldDiffStat != null) {
+        oldDiffStat.add(diffStat);
+      } else {
+        aggregatedDiffstats.put(timeKey, diffStat);
+      }
+    }
+    return aggregatedDiffstats;
+  }
 
-		@Override
-		public void setDiffAdded(boolean isDiffAdded) {
-			this.delegate.setDiffAdded(isDiffAdded);
-		}
+  private static TimeAxisKeyFactory getFactory(List<CommitCoordinate> coordinates) {
+    Date first = coordinates.get(0).getDate();
+    Date last = coordinates.get(coordinates.size() - 1).getDate();
 
-		@Override
-		public boolean isDiffAdded() {
-			return this.delegate.isDiffAdded();
-		}
+    if (YearMonthDay.daysBetween(first, last) >= 100) {
+      return new YearMonthFactory();
+    } else {
+      return new YearMonthDayFactory();
+    }
 
-		@Override
-		public void setDiffCopied(boolean isDiffCopied) {
-			this.delegate.setDiffCopied(isDiffCopied);
-		}
+  }
 
-		@Override
-		public boolean isDiffCopied() {
-			return this.delegate.isDiffCopied();
-		}
+  private static Map<Long, TimeAxisKey> buildRevisionToDateMap(List<CommitCoordinate> coordinates, TimeAxisKeyFactory factory) {
+    Map<Long, TimeAxisKey> revisionToDateMap = new HashMap<>(coordinates.size());
+    for (CommitCoordinate commitCoordinate : coordinates) {
+      Date date = commitCoordinate.getDate();
+      long revision = commitCoordinate.getRevision();
+      TimeAxisKey timeAxisKey = factory.fromDate(date);
+      revisionToDateMap.put(revision, timeAxisKey);
+    }
+    return revisionToDateMap;
+  }
 
-		@Override
-		public void setDiffUnversioned(boolean diffUnversioned) {
-			this.delegate.setDiffUnversioned(diffUnversioned);
-			
-		}
+  private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+    boolean stopOnCopy = true;
+    boolean discoverChangedPaths = false;
+    SVNRevision startRevision = SVNRevision.create(1L);
+    SVNRevision endRevision = SVNRevision.HEAD;
 
-		@Override
-		public boolean isDiffUnversioned() {
-			return this.delegate.isDiffUnversioned();
-		}
+    File[] paths = new File[]{configuration.getWorkingCopy()};
+    RevisionCollector logHandler = new RevisionCollector(configuration.getAuthors(), reporter);
+    long limit = Long.MAX_VALUE;
+    clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
+        limit, logHandler);
+    return logHandler.getCoordinates();
+  }
 
-		@Override
-		public File createTempDirectory() throws SVNException {
-			return this.delegate.createTempDirectory();
-		}
+  private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, List<CommitCoordinate> coordinates, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+    SVNDiffClient diffClient = clientManager.getDiffClient();
 
-		@Override
-		public void displayPropDiff(String path, SVNProperties baseProps, SVNProperties diff, OutputStream result) throws SVNException {
-		}
+    ResetOutputStream result = new ResetOutputStream();
+    DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(),
+        configuration, reporter, result);
+    diffClient.setDiffGenerator(diffGenerator);
+    SVNDepth depth = SVNDepth.INFINITY;
+    boolean useAncestry = true;
+    //		diffClient.setGitDiffFormat(true);
+    Collection<String> changeLists = null;
+    File workingCopy = configuration.getWorkingCopy();
+    for (CommitCoordinate coordinate : coordinates) {
+      long revision = coordinate.getRevision();
+      SVNRevision newRevision = SVNRevision.create(revision);
+      SVNRevision oldRevision = SVNRevision.create(revision - 1L);
+      diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
+    }
 
-		@Override
-		public void displayFileDiff(String path, File file1, File file2, String rev1, String rev2, String mimeType1, String mimeType2, OutputStream result) throws SVNException {
-			long newRevision = Long.parseLong(rev2.substring("(revision ".length(), rev2.length() - 1));
-			if (this.considerFile(path)) {
-				ResetOutputStream resetOutStream = (ResetOutputStream) result;
-				resetOutStream.initialize();
-				this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
-				DiffStat diffStat = resetOutStream.finish();
-				if (diffStat.added() <= this.maxChanges && diffStat.removed() <= this.maxChanges) {
-					this.addDiffStat(newRevision, diffStat);
-				}
-			}
-			reporter.revisionParsed(newRevision);
-		}
-		
-		private void addDiffStat(Long revision, DiffStat diffStat) {
-			DiffStat oldStat = this.diffStats.get(revision);
-			if (oldStat != null) {
-				oldStat.add(diffStat);
-			} else {
-				this.diffStats.put(revision, diffStat);
-			}
-		}
-		
-		private boolean considerFile(String path) {
-			if (path == null || path.isEmpty()) {
-				return false;
-			}
-			String extension = getExtension(path);
-			return extension != null && this.includedFileExtensions.contains(extension);
-		}
-		
-		private static String getExtension(String path) {
-			int lastIndex = lastIndexOf('.', path);
-			if (lastIndex == -1 || lastIndex == path.length() - 1) {
-				return null;
-			}
-			return path.substring(lastIndex + 1, path.length());
-		}
-		
-		private static int lastIndexOf(char c, String s) {
-			int lastIndex = s.indexOf(c);
-			if (lastIndex == -1) {
-				return lastIndex;
-			}
-			while (true) {
-				int nextIndex = s.indexOf(c, lastIndex + 1);
-				if (nextIndex == -1) {
-					return lastIndex;
-				}
-				lastIndex = nextIndex;
-			}
-			
-		}
+    return diffGenerator.getDiffStats();
+  }
 
-		@Override
-		public void displayDeletedDirectory(String path, String rev1, String rev2) throws SVNException {
-		}
 
-		@Override
-		public void displayAddedDirectory(String path, String rev1, String rev2) throws SVNException {
-		}
+  static final class RevisionCollector implements ISVNLogEntryHandler {
 
-		
-	}
+    private final Set<String> authors;
+    private final List<CommitCoordinate> coordinates;
+    private final ProgressReporter reporter;
+
+    RevisionCollector(Set<String> authors, ProgressReporter reporter) {
+      this.authors = authors;
+      this.reporter = reporter;
+      this.coordinates = new ArrayList<>();
+    }
+
+
+    @Override
+    public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
+      long revision = logEntry.getRevision();
+      String logEntryAuthor = logEntry.getAuthor();
+      if (this.authors.contains(logEntryAuthor)) {
+        Date date = logEntry.getDate();
+        CommitCoordinate coordinate = new CommitCoordinate(revision, date);
+        this.coordinates.add(coordinate);
+      }
+      this.reporter.revisionLogged(revision);
+
+    }
+
+    List<CommitCoordinate> getCoordinates() {
+      return this.coordinates;
+    }
+
+  }
+
+  static final class DiffStatDiffGenerator implements ISVNDiffGenerator {
+
+    private final ISVNDiffGenerator delegate;
+    private final Map<Long, DiffStat> diffStats;
+    private final Set<String> includedFileExtensions;
+    private final ProgressReporter reporter;
+    private final ResetOutputStream output;
+
+    DiffStatDiffGenerator(ISVNDiffGenerator delegate, DiffStatConfiguration configuration, ProgressReporter reporter, ResetOutputStream output) {
+      this.delegate = delegate;
+      this.includedFileExtensions = configuration.getIncludedFiles();
+      this.reporter = reporter;
+      this.output = output;
+      this.diffStats = new HashMap<>();
+    }
+
+    Map<Long, DiffStat> getDiffStats() {
+      return this.diffStats;
+    }
+
+    void clearDiffStats() {
+      this.diffStats.clear();
+    }
+
+    @Override
+    public void init(String anchorPath1, String anchorPath2) {
+      this.delegate.init(anchorPath1, anchorPath2);
+    }
+
+    @Override
+    public void setBasePath(File basePath) {
+      this.delegate.setBasePath(basePath);
+    }
+
+    @Override
+    public void setForcedBinaryDiff(boolean forced) {
+      this.delegate.setForcedBinaryDiff(forced);
+    }
+
+    @Override
+    public boolean isForcedBinaryDiff() {
+      return this.delegate.isForcedBinaryDiff();
+    }
+
+    @Override
+    public void setEncoding(String encoding) {
+      this.delegate.setEncoding(encoding);
+      this.output.setEncoding(encoding);
+    }
+
+    @Override
+    public String getEncoding() {
+      return this.delegate.getEncoding();
+    }
+
+    @Override
+    public void setEOL(byte[] eol) {
+      this.delegate.setEOL(eol);
+      this.output.setEOL(eol);
+    }
+
+    @Override
+    public byte[] getEOL() {
+      return this.delegate.getEOL();
+    }
+
+    @Override
+    public void setDiffDeleted(boolean isDiffDeleted) {
+      this.delegate.setDiffDeleted(isDiffDeleted);
+    }
+
+    @Override
+    public boolean isDiffDeleted() {
+      return this.delegate.isDiffDeleted();
+    }
+
+    @Override
+    public void setDiffAdded(boolean isDiffAdded) {
+      this.delegate.setDiffAdded(isDiffAdded);
+    }
+
+    @Override
+    public boolean isDiffAdded() {
+      return this.delegate.isDiffAdded();
+    }
+
+    @Override
+    public void setDiffCopied(boolean isDiffCopied) {
+      this.delegate.setDiffCopied(isDiffCopied);
+    }
+
+    @Override
+    public boolean isDiffCopied() {
+      return this.delegate.isDiffCopied();
+    }
+
+    @Override
+    public void setDiffUnversioned(boolean diffUnversioned) {
+      this.delegate.setDiffUnversioned(diffUnversioned);
+
+    }
+
+    @Override
+    public boolean isDiffUnversioned() {
+      return this.delegate.isDiffUnversioned();
+    }
+
+    @Override
+    public File createTempDirectory() throws SVNException {
+      return this.delegate.createTempDirectory();
+    }
+
+    @Override
+    public void displayPropDiff(String path, SVNProperties baseProps, SVNProperties diff, OutputStream result) throws SVNException {
+    }
+
+    @Override
+    public void displayFileDiff(String path, File file1, File file2, String rev1, String rev2, String mimeType1, String mimeType2, OutputStream result) throws SVNException {
+      long newRevision = Long.parseLong(rev2.substring("(revision ".length(), rev2.length() - 1));
+      if (this.considerFile(path)) {
+        ResetOutputStream resetOutStream = (ResetOutputStream) result;
+        resetOutStream.initialize();
+        this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
+        DiffStat diffStat = resetOutStream.finish();
+        this.addDiffStat(newRevision, diffStat);
+      }
+      this.reporter.revisionParsed(newRevision);
+    }
+
+    private void addDiffStat(Long revision, DiffStat diffStat) {
+      DiffStat oldStat = this.diffStats.get(revision);
+      if (oldStat != null) {
+        oldStat.add(diffStat);
+      } else {
+        this.diffStats.put(revision, diffStat);
+      }
+    }
+
+    private boolean considerFile(String path) {
+      if (path == null || path.isEmpty()) {
+        return false;
+      }
+      String extension = getExtension(path);
+      return extension != null && this.includedFileExtensions.contains(extension);
+    }
+
+    private static String getExtension(String path) {
+      int lastIndex = lastIndexOf('.', path);
+      if (lastIndex == -1 || lastIndex == path.length() - 1) {
+        return null;
+      }
+      return path.substring(lastIndex + 1, path.length());
+    }
+
+    private static int lastIndexOf(char c, String s) {
+      int lastIndex = s.indexOf(c);
+      if (lastIndex == -1) {
+        return lastIndex;
+      }
+      while (true) {
+        int nextIndex = s.indexOf(c, lastIndex + 1);
+        if (nextIndex == -1) {
+          return lastIndex;
+        }
+        lastIndex = nextIndex;
+      }
+
+    }
+
+    @Override
+    public void displayDeletedDirectory(String path, String rev1, String rev2) throws SVNException {
+    }
+
+    @Override
+    public void displayAddedDirectory(String path, String rev1, String rev2) throws SVNException {
+    }
+
+
+  }
 
 }

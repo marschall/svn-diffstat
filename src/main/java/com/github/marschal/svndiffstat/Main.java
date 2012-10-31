@@ -22,60 +22,64 @@ import com.beust.jcommander.JCommander;
 
 public class Main {
 
-	public static void main(String[] args) throws IOException, SVNException {
-		DiffStatConfiguration configuration = parse(args);
-		System.out.println("max arguments: " + configuration.getMaxChanges());
-		init();
-		ProgressReporter reporter = new ProgressReporter(System.out);
-		NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats = DiffStatGenerator.getData(configuration, reporter);
-		
-		saveAndDisplayChart(configuration, aggregatedDiffStats, reporter);
-	}
+  public static void main(String[] args) throws IOException, SVNException {
+    DiffStatConfiguration configuration = parse(args);
+    init();
+    ProgressReporter reporter = new ProgressReporter(System.out);
+    NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats = DiffStatGenerator.getData(configuration, reporter);
 
-	private static void saveAndDisplayChart(DiffStatConfiguration configuration, NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats, ProgressReporter reporter) throws IOException {
-		JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats, configuration);
-		Path savePath = configuration.getSavePath();
-		if (savePath != null) {
-			Dimension dimension = configuration.getDimension();
-			reporter.saveTo(savePath);
-			ChartUtilities.saveChartAsPNG(savePath.toFile(), chart, dimension.width * configuration.multiplierInt(), dimension.height * configuration.multiplierInt());
-			reporter.saveDone();
-		} else {
-			ChartBuilder.displayChard(chart, configuration);
-		}
-		
-	}
-	
-	private static void init() {
-		FSRepositoryFactory.setup();
-		DAVRepositoryFactory.setup();
-		SVNRepositoryFactoryImpl.setup();
-	}
+    if (aggregatedDiffStats.isEmpty()) {
+      System.out.println("no data found");
+      return;
+    }
+    
+    saveAndDisplayChart(configuration, aggregatedDiffStats, reporter);
+  }
 
-	private static DiffStatConfiguration parse(String[] args) {
-		ConsoleConfiguration configuration = new ConsoleConfiguration();
-		JCommander commander = new JCommander(configuration, args);
+  private static void saveAndDisplayChart(DiffStatConfiguration configuration, NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats, ProgressReporter reporter) throws IOException {
+    JFreeChart chart = ChartBuilder.createChart(aggregatedDiffStats, configuration);
+    Path savePath = configuration.getSavePath();
+    if (savePath != null) {
+      Dimension dimension = configuration.getDimension();
+      reporter.saveTo(savePath);
+      ChartUtilities.saveChartAsPNG(savePath.toFile(), chart, dimension.width * configuration.multiplierInt(), dimension.height * configuration.multiplierInt());
+      reporter.saveDone();
+    } else {
+      ChartBuilder.displayChard(chart, configuration);
+    }
 
-		File workingCopy = new File("").getAbsoluteFile();
-		Dimension dimension = new Dimension(configuration.width, configuration.height);
-		Set<String> authors = toSet(configuration.authors);
-		Set<String> extensions = toSet(configuration.extensions);
-		Path savePath = Paths.get(configuration.savePath);
-		boolean doubleSize = configuration.doubleSize;
-		return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max);
-	}
-	
-	static <T> Set<T> toSet(List<T> list) {
-		if (list.isEmpty()) {
-			// a set containing everything
-			return new FullSet<>();
-		}
-		if (list.size() == 1) {
-			return Collections.singleton(list.get(0));
-		} else {
-			return new HashSet<>(list);
-		}
-		
-	}
+  }
+
+  private static void init() {
+    FSRepositoryFactory.setup();
+    DAVRepositoryFactory.setup();
+    SVNRepositoryFactoryImpl.setup();
+  }
+
+  private static DiffStatConfiguration parse(String[] args) {
+    ConsoleConfiguration configuration = new ConsoleConfiguration();
+    JCommander commander = new JCommander(configuration, args);
+
+    File workingCopy = new File("").getAbsoluteFile();
+    Dimension dimension = new Dimension(configuration.width, configuration.height);
+    Set<String> authors = toSet(configuration.authors);
+    Set<String> extensions = toSet(configuration.extensions);
+    Path savePath = Paths.get(configuration.savePath);
+    boolean doubleSize = configuration.doubleSize;
+    return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max);
+  }
+
+  static <T> Set<T> toSet(List<T> list) {
+    if (list.isEmpty()) {
+      // a set containing everything
+      return new FullSet<>();
+    }
+    if (list.size() == 1) {
+      return Collections.singleton(list.get(0));
+    } else {
+      return new HashSet<>(list);
+    }
+
+  }
 
 }
