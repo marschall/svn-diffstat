@@ -334,7 +334,15 @@ class DiffStatGenerator {
         ResetOutputStream resetOutStream = (ResetOutputStream) result;
         resetOutStream.initialize();
         this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
-        DiffStat diffStat = resetOutStream.finish();
+        DiffStat diffStat;
+        try {
+          diffStat = resetOutStream.finish();
+        } catch (IllegalArgumentException e) {
+          String message = "failed to parse path: " + path
+               + " rev1 " + rev1 + " rev2 " + rev2
+               + " file1 " + file1 + " file2 " + file2;
+          throw new IllegalArgumentException(message, e);
+        }
         this.addDiffStat(newRevision, diffStat);
       }
       this.reporter.revisionParsed(newRevision);
