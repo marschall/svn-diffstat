@@ -28,10 +28,15 @@ final class FullSet<E> extends AbstractSet<E> {
   public Iterator<E> iterator() {
     return Collections.emptyIterator();
   }
+  
+  @Override
+  public boolean isEmpty() {
+    return false;
+  }
 
   @Override
   public int size() {
-    return 0;
+    return -1;
   }
 
 }

@@ -1,6 +1,11 @@
 package com.github.marschal.svndiffstat;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,8 +21,12 @@ import java.util.TreeMap;
 
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
 import org.tmatesoft.svn.core.SVNDepth;
+import org.tmatesoft.svn.core.SVNErrorCode;
+import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
+import org.tmatesoft.svn.core.SVNLogEntryPath;
+import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.wc.ISVNDiffGenerator;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
@@ -149,7 +158,7 @@ class DiffStatGenerator {
     SVNRevision endRevision = SVNRevision.HEAD;
 
     File[] paths = new File[]{configuration.getWorkingCopy()};
-    RevisionCollector logHandler = new RevisionCollector(configuration.getAuthors(), reporter);
+    RevisionCollector logHandler = new RevisionCollector(configuration, reporter);
     long limit = Long.MAX_VALUE;
     clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
         limit, logHandler);
@@ -165,7 +174,7 @@ class DiffStatGenerator {
     diffClient.setDiffGenerator(diffGenerator);
     SVNDepth depth = SVNDepth.INFINITY;
     boolean useAncestry = true;
-    //		diffClient.setGitDiffFormat(true);
+    //diffClient.setGitDiffFormat(true);
     Collection<String> changeLists = null;
     File workingCopy = configuration.getWorkingCopy();
     for (CommitCoordinate coordinate : coordinates) {
@@ -177,6 +186,31 @@ class DiffStatGenerator {
 
     return diffGenerator.getDiffStats();
   }
+  
+
+  static String getExtension(String path) {
+    int lastIndex = lastIndexOf('.', path);
+    if (lastIndex == -1 || lastIndex == path.length() - 1) {
+      return null;
+    }
+    return path.substring(lastIndex + 1, path.length());
+  }
+  
+
+  private static int lastIndexOf(char c, String s) {
+    int lastIndex = s.indexOf(c);
+    if (lastIndex == -1) {
+      return lastIndex;
+    }
+    while (true) {
+      int nextIndex = s.indexOf(c, lastIndex + 1);
+      if (nextIndex == -1) {
+        return lastIndex;
+      }
+      lastIndex = nextIndex;
+    }
+
+  }
 
 
   static final class RevisionCollector implements ISVNLogEntryHandler {
@@ -184,9 +218,11 @@ class DiffStatGenerator {
     private final Set<String> authors;
     private final List<CommitCoordinate> coordinates;
     private final ProgressReporter reporter;
+    private final Set<String> includedFiles;
 
-    RevisionCollector(Set<String> authors, ProgressReporter reporter) {
-      this.authors = authors;
+    RevisionCollector(DiffStatConfiguration configuration, ProgressReporter reporter) {
+      this.authors = configuration.getAuthors();
+      this.includedFiles = configuration.getIncludedFiles();
       this.reporter = reporter;
       this.coordinates = new ArrayList<>();
     }
@@ -199,11 +235,25 @@ class DiffStatGenerator {
       if (this.authors.contains(logEntryAuthor)) {
         Date date = logEntry.getDate();
         CommitCoordinate coordinate = new CommitCoordinate(revision, date);
-        this.coordinates.add(coordinate);
+        if (hasInterestingPath(logEntry.getChangedPaths())) {
+          this.coordinates.add(coordinate);
+        }
       }
       this.reporter.revisionLogged(revision);
-
     }
+
+    private boolean hasInterestingPath(Map<String, SVNLogEntryPath> changedPaths) {
+      for (SVNLogEntryPath path : changedPaths.values()) {
+        if (path.getKind() == SVNNodeKind.FILE) {
+          String extension = getExtension(path.getPath());
+          if (extension != null && this.includedFiles.contains(extension)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
 
     List<CommitCoordinate> getCoordinates() {
       return this.coordinates;
@@ -331,21 +381,50 @@ class DiffStatGenerator {
     public void displayFileDiff(String path, File file1, File file2, String rev1, String rev2, String mimeType1, String mimeType2, OutputStream result) throws SVNException {
       long newRevision = Long.parseLong(rev2.substring("(revision ".length(), rev2.length() - 1));
       if (this.considerFile(path)) {
-        ResetOutputStream resetOutStream = (ResetOutputStream) result;
-        resetOutStream.initialize();
-        this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
         DiffStat diffStat;
-        try {
-          diffStat = resetOutStream.finish();
-        } catch (IllegalArgumentException e) {
-          String message = "failed to parse path: " + path
-               + " rev1 " + rev1 + " rev2 " + rev2
-               + " file1 " + file1 + " file2 " + file2;
-          throw new IllegalArgumentException(message, e);
+        if (file1 == null) {
+          int added = this.countLines(file2);
+          diffStat = new DiffStat(added, 0);
+        } else if (file2 == null ) {
+          int removed = this.countLines(file1);
+          diffStat = new DiffStat(0, removed);
+        } else {
+          diffStat = this.parseNormal(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result, newRevision);
         }
         this.addDiffStat(newRevision, diffStat);
       }
       this.reporter.revisionParsed(newRevision);
+    }
+    
+    private int countLines(File file) throws SVNException {
+      try (InputStream fileInput = new FileInputStream(file);
+          BufferedReader reader = new BufferedReader(new InputStreamReader(fileInput))) {
+        int count = 0;
+        while (reader.readLine() != null) {
+          count += 1;
+        }
+        return count;
+      } catch (IOException e) {
+        SVNErrorCode errorCode = SVNErrorCode.IO_ERROR;
+        SVNErrorMessage message = SVNErrorMessage.create(errorCode, "could not count lines");
+        throw new SVNException(message, e);
+      }
+    }
+
+    private DiffStat parseNormal(String path, File file1, File file2, String rev1, String rev2, String mimeType1, String mimeType2, OutputStream result, long newRevision) throws SVNException {
+      ResetOutputStream resetOutStream = (ResetOutputStream) result;
+      resetOutStream.initialize();
+      this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, result);
+      DiffStat diffStat;
+      try {
+        diffStat = resetOutStream.finish();
+      } catch (IllegalArgumentException e) {
+        String message = "failed to parse path: " + path
+             + " rev1 " + rev1 + " rev2 " + rev2
+             + " file1 " + file1 + " file2 " + file2;
+        throw new IllegalArgumentException(message, e);
+      }
+      return diffStat;
     }
 
     private void addDiffStat(Long revision, DiffStat diffStat) {
@@ -363,29 +442,6 @@ class DiffStatGenerator {
       }
       String extension = getExtension(path);
       return extension != null && this.includedFileExtensions.contains(extension);
-    }
-
-    private static String getExtension(String path) {
-      int lastIndex = lastIndexOf('.', path);
-      if (lastIndex == -1 || lastIndex == path.length() - 1) {
-        return null;
-      }
-      return path.substring(lastIndex + 1, path.length());
-    }
-
-    private static int lastIndexOf(char c, String s) {
-      int lastIndex = s.indexOf(c);
-      if (lastIndex == -1) {
-        return lastIndex;
-      }
-      while (true) {
-        int nextIndex = s.indexOf(c, lastIndex + 1);
-        if (nextIndex == -1) {
-          return lastIndex;
-        }
-        lastIndex = nextIndex;
-      }
-
     }
 
     @Override
