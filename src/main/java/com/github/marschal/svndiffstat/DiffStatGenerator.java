@@ -25,8 +25,6 @@ import org.tmatesoft.svn.core.SVNErrorCode;
 import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.SVNLogEntryPath;
-import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.wc.ISVNDiffGenerator;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
@@ -218,11 +216,9 @@ class DiffStatGenerator {
     private final Set<String> authors;
     private final List<CommitCoordinate> coordinates;
     private final ProgressReporter reporter;
-    private final Set<String> includedFiles;
 
     RevisionCollector(DiffStatConfiguration configuration, ProgressReporter reporter) {
       this.authors = configuration.getAuthors();
-      this.includedFiles = configuration.getIncludedFiles();
       this.reporter = reporter;
       this.coordinates = new ArrayList<>();
     }
@@ -235,25 +231,10 @@ class DiffStatGenerator {
       if (this.authors.contains(logEntryAuthor)) {
         Date date = logEntry.getDate();
         CommitCoordinate coordinate = new CommitCoordinate(revision, date);
-        if (hasInterestingPath(logEntry.getChangedPaths())) {
-          this.coordinates.add(coordinate);
-        }
+        this.coordinates.add(coordinate);
       }
       this.reporter.revisionLogged(revision);
     }
-
-    private boolean hasInterestingPath(Map<String, SVNLogEntryPath> changedPaths) {
-      for (SVNLogEntryPath path : changedPaths.values()) {
-        if (path.getKind() == SVNNodeKind.FILE) {
-          String extension = getExtension(path.getPath());
-          if (extension != null && this.includedFiles.contains(extension)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
 
     List<CommitCoordinate> getCoordinates() {
       return this.coordinates;
