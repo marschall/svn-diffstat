@@ -88,9 +88,9 @@ final class ProgressReporter {
     long aggregationEnd = System.currentTimeMillis();
     long duration = aggregationEnd - this.aggregationStart;
     if (duration >= 2000) {
-      this.out.printf("aggregated into %d data poiints %ds%n", aggregatedDiffstats.size(), duration / 1000);
+      this.out.printf("aggregated into %d data points %ds%n", aggregatedDiffstats.size(), duration / 1000);
     } else {
-      this.out.printf("aggregated into %d data poiints %dms%n", aggregatedDiffstats.size(), duration);
+      this.out.printf("aggregated into %d data points %dms%n", aggregatedDiffstats.size(), duration);
     }
   }
 
