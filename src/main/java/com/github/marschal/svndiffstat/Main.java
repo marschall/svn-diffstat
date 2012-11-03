@@ -81,7 +81,7 @@ public class Main {
   }
 
   static <T> Set<T> toSet(List<T> list) {
-    if (list.isEmpty()) {
+    if (list == null || list.isEmpty()) {
       // a set containing everything
       return new FullSet<>();
     }
