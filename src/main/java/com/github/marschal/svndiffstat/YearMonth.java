@@ -6,12 +6,14 @@ import java.util.Date;
 import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.Week;
+import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
 import org.joda.time.ReadablePartial;
 
 import static org.jfree.chart.axis.DateTickUnitType.MONTH;
 import static org.jfree.chart.axis.DateTickUnitType.YEAR;
+import static org.jfree.chart.axis.DateTickUnitType.DAY;
 
 final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
 
@@ -57,6 +59,9 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
     } else if (type == MONTH) {
       Months monthsBetween = Months.monthsBetween(this.toLocalDate(), other.toLocalDate());
       return monthsBetween.getMonths();
+    } else if (type == DAY) {
+      Days daysBetween = Days.daysBetween(this.toLocalDate(), other.toLocalDate());
+      return daysBetween.getDays();
     } else {
       throw new IllegalArgumentException("unsupported tick type: " + type);
     }
