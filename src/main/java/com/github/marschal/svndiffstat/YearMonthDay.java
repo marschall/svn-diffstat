@@ -1,11 +1,11 @@
 package com.github.marschal.svndiffstat;
 
-import java.util.Calendar;
 import java.util.Date;
 
 import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.Day;
 import org.jfree.data.time.RegularTimePeriod;
+import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
@@ -41,25 +41,23 @@ final class YearMonthDay extends TimeAxisKey implements Comparable<YearMonthDay>
   }
 
   static YearMonthDay fromDate(Date date) {
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTime(date);
-    return fromCalendar(calendar);
+    LocalDate localDate = new DateTime(date.getTime()).toLocalDate();
+    return fromLocalDate(localDate);
   }
+  
 
-  private static YearMonthDay fromCalendar(Calendar calendar) {
-    return new YearMonthDay((short) calendar.get(Calendar.YEAR),
-        (byte) calendar.get(Calendar.MONTH),
-        (byte) calendar.get(Calendar.DAY_OF_MONTH));
+  private static YearMonthDay fromLocalDate(LocalDate localDate) {
+    return new YearMonthDay((short) localDate.getYear(),
+        (byte) localDate.getMonthOfYear(),
+        (byte) localDate.getDayOfMonth());
   }
 
   @Override
   RegularTimePeriod toPeriod() {
-    // compensate for the fact that java.util.Calendar months are 0-based
-    // and org.jfree.data.time.Day months are 1-based
-    return new Day(this.day, this.month + (1 - Calendar.JANUARY), this.year);
+    return new Day(this.day, this.month, this.year);
   }
 
-  private LocalDate toLocalDate() {
+  LocalDate toLocalDate() {
     return new LocalDate(this.year, this.month, this.day);
   }
 
@@ -81,24 +79,14 @@ final class YearMonthDay extends TimeAxisKey implements Comparable<YearMonthDay>
 
   @Override
   YearMonthDay previous() {
-    Calendar calendar = this.toCalendar();
-    calendar.roll(Calendar.DAY_OF_MONTH, false);
-    return fromCalendar(calendar);
+    LocalDate localDate = this.toLocalDate();
+    return fromLocalDate(localDate.minusDays(1));
   }
 
   @Override
   YearMonthDay next() {
-    Calendar calendar = this.toCalendar();
-    calendar.roll(Calendar.DAY_OF_MONTH, true);
-    return fromCalendar(calendar);
-  }
-
-  private Calendar toCalendar() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(Calendar.YEAR, this.year);
-    calendar.set(Calendar.MONTH, this.month);
-    calendar.set(Calendar.DAY_OF_MONTH, this.day);
-    return calendar;
+    LocalDate localDate = this.toLocalDate();
+    return fromLocalDate(localDate.plusDays(1));
   }
 
   @Override

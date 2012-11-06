@@ -1,19 +1,18 @@
 package com.github.marschal.svndiffstat;
 
-import java.util.Calendar;
 import java.util.Date;
 
 import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.Week;
+import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
-import org.joda.time.ReadablePartial;
 
+import static org.jfree.chart.axis.DateTickUnitType.DAY;
 import static org.jfree.chart.axis.DateTickUnitType.MONTH;
 import static org.jfree.chart.axis.DateTickUnitType.YEAR;
-import static org.jfree.chart.axis.DateTickUnitType.DAY;
 
 final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
 
@@ -29,16 +28,18 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
 
     @Override
     public YearMonth fromDate(Date date) {
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(date);
-      return fromCalendar(calendar);
+      return YearMonth.fromDate(date);
     }
   }
 
+  static YearMonth fromDate(Date date) {
+    LocalDate localDate = new DateTime(date.getTime()).toLocalDate();
+    return fromLocalDate(localDate);
+  }
 
-  private static YearMonth fromCalendar(Calendar calendar) {
-    return new YearMonth((short) calendar.get(Calendar.YEAR),
-        (byte) calendar.get(Calendar.WEEK_OF_YEAR));
+  static YearMonth fromLocalDate(LocalDate localDate) {
+    return new YearMonth((short) localDate.getWeekyear(),
+        (byte) localDate.getWeekOfWeekyear());
   }
 
   @Override
@@ -46,7 +47,7 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
     return new Week(this.week, this.year);
   }
 
-  private ReadablePartial toLocalDate() {
+  LocalDate toLocalDate() {
     // TODO not sure if the is correct for end / star of year weeks
     return new LocalDate(this.year, 1, 1).plusWeeks(this.week - 1);
   }
@@ -69,23 +70,14 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
 
   @Override
   YearMonth previous() {
-    Calendar calendar = this.toCalendar();
-    calendar.roll(Calendar.WEEK_OF_YEAR, false);
-    return fromCalendar(calendar);
+    LocalDate localDate = this.toLocalDate();
+    return fromLocalDate(localDate.minusMonths(1));
   }
 
   @Override
   YearMonth next() {
-    Calendar calendar = this.toCalendar();
-    calendar.roll(Calendar.WEEK_OF_YEAR, true);
-    return fromCalendar(calendar);
-  }
-
-  private Calendar toCalendar() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(Calendar.YEAR, this.year);
-    calendar.set(Calendar.WEEK_OF_YEAR, this.week);
-    return calendar;
+    LocalDate localDate = this.toLocalDate();
+    return fromLocalDate(localDate.plusMonths(1));
   }
 
   @Override
