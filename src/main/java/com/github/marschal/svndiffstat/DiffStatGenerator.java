@@ -32,7 +32,7 @@ import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 import com.github.marschal.svndiffstat.TimeAxisKey.TimeAxisKeyFactory;
-import com.github.marschal.svndiffstat.YearMonth.YearMonthFactory;
+import com.github.marschal.svndiffstat.YearWeek.YearMonthFactory;
 import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
 
 
@@ -400,6 +400,9 @@ class DiffStatGenerator {
       try {
         diffStat = resetOutStream.finish();
       } catch (IllegalArgumentException e) {
+        System.out.print("Failed to generate diff[");
+        this.delegate.displayFileDiff(path, file1, file2, rev1, rev2, mimeType1, mimeType2, System.out);
+        System.out.print("]");
         String message = "failed to parse path: " + path
              + " rev1 " + rev1 + " rev2 " + rev2
              + " file1 " + file1 + " file2 " + file2;

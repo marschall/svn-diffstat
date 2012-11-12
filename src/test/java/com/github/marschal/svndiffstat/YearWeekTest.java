@@ -21,7 +21,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 
-public class YearMonthTest {
+public class YearWeekTest {
 
  private DateFormat dateFormat;
   
@@ -33,15 +33,15 @@ public class YearMonthTest {
   @Test
   public void nextAcrossMonths() throws ParseException {
     Date date = this.dateFormat.parse("2012-09-30T16:10:12");
-    YearMonth yearMonth = YearMonth.fromDate(date);
+    YearWeek yearMonth = YearWeek.fromDate(date);
     assertEquals(new LocalDate(2012, 9, 23), yearMonth.toLocalDate());
-    assertEquals(new LocalDate(2012, 10, 21), yearMonth.next().toLocalDate());
+    assertEquals(new LocalDate(2012, 9, 30), yearMonth.next().toLocalDate());
   }
 
   @Test
   public void nextAcrosYears() throws ParseException {
     Date date = this.dateFormat.parse("2011-12-31T16:10:12");
-    YearMonth yearMonth = YearMonth.fromDate(date);
+    YearWeek yearMonth = YearWeek.fromDate(date);
     assertEquals(new LocalDate(2011, 12, 24), yearMonth.toLocalDate());
     assertEquals(new LocalDate(2012, 01, 22), yearMonth.next().toLocalDate());
   }
@@ -50,7 +50,7 @@ public class YearMonthTest {
   @Test
   public void previousAcrossMonths() throws ParseException {
     Date date = this.dateFormat.parse("2012-10-01T16:10:12");
-    YearMonth yearMonth = YearMonth.fromDate(date);
+    YearWeek yearMonth = YearWeek.fromDate(date);
     assertEquals(new LocalDate(2012, 9, 30), yearMonth.toLocalDate());
     assertEquals(new LocalDate(2012, 8, 26), yearMonth.previous().toLocalDate());
   }
@@ -58,7 +58,7 @@ public class YearMonthTest {
   @Test
   public void previousAcrosYears() throws ParseException {
     Date date = this.dateFormat.parse("2012-01-01T16:10:12");
-    YearMonth yearMonth = YearMonth.fromDate(date);
+    YearWeek yearMonth = YearWeek.fromDate(date);
     assertEquals(new LocalDate(2011, 12, 24), yearMonth.toLocalDate());
     assertEquals(new LocalDate(2011, 11, 19), yearMonth.previous().toLocalDate());
   }

@@ -20,7 +20,7 @@ final class YearMonthDay extends TimeAxisKey implements Comparable<YearMonthDay>
   private final byte month;
   private final byte day;
 
-  private YearMonthDay(short year, byte month, byte day) {
+  YearMonthDay(short year, byte month, byte day) {
     this.year = year;
     this.month = month;
     this.day = day;

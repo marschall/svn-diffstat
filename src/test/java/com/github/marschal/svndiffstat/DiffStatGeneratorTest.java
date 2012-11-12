@@ -22,8 +22,8 @@ public class DiffStatGeneratorTest {
   @Test
   public void insertZeroDataPointsNothingBetween() {
     NavigableMap<TimeAxisKey, DiffStat> diffStats = new TreeMap<>();
-    YearMonth firstKey = new YearMonth((short) 2012, (byte) 2);
-    YearMonth secondKey = new YearMonth((short) 2012, (byte) 3);
+    YearMonthDay firstKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 2);
+    YearMonthDay secondKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 3);
     
     diffStats.put(firstKey, new DiffStat(1, 1));
     diffStats.put(secondKey, new DiffStat(2, 2));
@@ -39,8 +39,8 @@ public class DiffStatGeneratorTest {
   @Test
   public void insertZeroDataPointsOneBetween() {
     NavigableMap<TimeAxisKey, DiffStat> diffStats = new TreeMap<>();
-    YearMonth firstKey = new YearMonth((short) 2012, (byte) 2);
-    YearMonth secondKey = new YearMonth((short) 2012, (byte) 4);
+    YearMonthDay firstKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 2);
+    YearMonthDay secondKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 4);
     diffStats.put(firstKey, new DiffStat(1, 1));
     diffStats.put(secondKey, new DiffStat(2, 2));
 
@@ -51,15 +51,15 @@ public class DiffStatGeneratorTest {
     assertEquals(new DiffStat(1, 1), diffStats.get(firstKey));
     assertEquals(new DiffStat(2, 2), diffStats.get(secondKey));
     // inserted
-    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonth((short) 2012, (byte) 3)));
+    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonthDay((short) 2012, (byte) 1, (byte) 3)));
   }
   
 
   @Test
   public void insertZeroDataPointsTwoBetween() {
     NavigableMap<TimeAxisKey, DiffStat> diffStats = new TreeMap<>();
-    YearMonth firstKey = new YearMonth((short) 2012, (byte) 2);
-    YearMonth secondKey = new YearMonth((short) 2012, (byte) 5);
+    YearMonthDay firstKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 2);
+    YearMonthDay secondKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 5);
     diffStats.put(firstKey, new DiffStat(1, 1));
     diffStats.put(secondKey, new DiffStat(2, 2));
 
@@ -70,16 +70,16 @@ public class DiffStatGeneratorTest {
     assertEquals(new DiffStat(1, 1), diffStats.get(firstKey));
     assertEquals(new DiffStat(2, 2), diffStats.get(secondKey));
     // inserted
-    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonth((short) 2012, (byte) 3)));
-    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonth((short) 2012, (byte) 4)));
+    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonthDay((short) 2012, (byte) 1, (byte) 3)));
+    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonthDay((short) 2012, (byte) 1, (byte) 4)));
   }
   
 
   @Test
   public void insertZeroDataPointsSeveralBetween() {
     NavigableMap<TimeAxisKey, DiffStat> diffStats = new TreeMap<>();
-    YearMonth firstKey = new YearMonth((short) 2012, (byte) 2);
-    YearMonth secondKey = new YearMonth((short) 2012, (byte) 10);
+    YearMonthDay firstKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 2);
+    YearMonthDay secondKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 10);
     diffStats.put(firstKey, new DiffStat(1, 1));
     diffStats.put(secondKey, new DiffStat(2, 2));
 
@@ -90,8 +90,8 @@ public class DiffStatGeneratorTest {
     assertEquals(new DiffStat(1, 1), diffStats.get(firstKey));
     assertEquals(new DiffStat(2, 2), diffStats.get(secondKey));
     // inserted
-    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonth((short) 2012, (byte) 3)));
-    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonth((short) 2012, (byte) 9)));
+    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonthDay((short) 2012, (byte) 1, (byte) 3)));
+    assertEquals(new DiffStat(0, 0), diffStats.get(new YearMonthDay((short) 2012, (byte) 1, (byte) 9)));
   }
 
 }

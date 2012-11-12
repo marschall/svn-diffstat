@@ -14,12 +14,12 @@ import static org.jfree.chart.axis.DateTickUnitType.DAY;
 import static org.jfree.chart.axis.DateTickUnitType.MONTH;
 import static org.jfree.chart.axis.DateTickUnitType.YEAR;
 
-final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
+final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
 
   private final short year;
   private final byte week;
 
-  YearMonth(short year, byte week) {
+  YearWeek(short year, byte week) {
     this.year = year;
     this.week = week;
   }
@@ -27,18 +27,18 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
   static final class YearMonthFactory implements TimeAxisKeyFactory {
 
     @Override
-    public YearMonth fromDate(Date date) {
-      return YearMonth.fromDate(date);
+    public YearWeek fromDate(Date date) {
+      return YearWeek.fromDate(date);
     }
   }
 
-  static YearMonth fromDate(Date date) {
+  static YearWeek fromDate(Date date) {
     LocalDate localDate = new DateTime(date.getTime()).toLocalDate();
     return fromLocalDate(localDate);
   }
 
-  static YearMonth fromLocalDate(LocalDate localDate) {
-    return new YearMonth((short) localDate.getWeekyear(),
+  static YearWeek fromLocalDate(LocalDate localDate) {
+    return new YearWeek((short) localDate.getWeekyear(),
         (byte) localDate.getWeekOfWeekyear());
   }
 
@@ -54,7 +54,7 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
 
   @Override
   int unitsBetween(TimeAxisKey key, DateTickUnitType type) {
-    YearMonth other = (YearMonth) key;
+    YearWeek other = (YearWeek) key;
     if (type == YEAR) {
       return other.year - this.year;
     } else if (type == MONTH) {
@@ -69,15 +69,17 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
   }
 
   @Override
-  YearMonth previous() {
+  YearWeek previous() {
     LocalDate localDate = this.toLocalDate();
-    return fromLocalDate(localDate.minusMonths(1));
+    int week = localDate.getWeekOfWeekyear();
+    return fromLocalDate(localDate.withWeekOfWeekyear(week + 1));
   }
 
   @Override
-  YearMonth next() {
+  YearWeek next() {
     LocalDate localDate = this.toLocalDate();
-    return fromLocalDate(localDate.plusMonths(1));
+    int week = localDate.getWeekOfWeekyear();
+    return fromLocalDate(localDate.withWeekOfWeekyear(week - 1));
   }
 
   @Override
@@ -85,10 +87,10 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof YearMonth)) {
+    if (!(obj instanceof YearWeek)) {
       return false;
     }
-    YearMonth other = (YearMonth) obj;
+    YearWeek other = (YearWeek) obj;
     return this.year == other.year
         && this.week == other.week;
   }
@@ -100,7 +102,7 @@ final class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
   }
 
   @Override
-  public int compareTo(YearMonth o) {
+  public int compareTo(YearWeek o) {
     int yearDiff = this.year - o.year;
     if (yearDiff != 0) {
       return yearDiff;
