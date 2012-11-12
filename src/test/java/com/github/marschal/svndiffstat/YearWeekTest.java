@@ -29,21 +29,30 @@ public class YearWeekTest {
   public void setUp() {
     this.dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
   }
+  
+
+  @Test
+  public void nextSameMonths() throws ParseException {
+    Date date = this.dateFormat.parse("2012-10-01T16:10:12");
+    YearWeek yearWeek = YearWeek.fromDate(date);
+    assertEquals(new LocalDate(2012, 10, 1), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2012, 10, 8), yearWeek.next().toLocalDate());
+  }
 
   @Test
   public void nextAcrossMonths() throws ParseException {
-    Date date = this.dateFormat.parse("2012-09-30T16:10:12");
+    Date date = this.dateFormat.parse("2012-09-17T16:10:12");
     YearWeek yearWeek = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2012, 9, 23), yearWeek.toLocalDate());
-    assertEquals(new LocalDate(2012, 9, 30), yearWeek.next().toLocalDate());
+    assertEquals(new LocalDate(2012, 9, 17), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2012, 9, 24), yearWeek.next().toLocalDate());
   }
 
   @Test
   public void nextAcrosYears() throws ParseException {
-    Date date = this.dateFormat.parse("2011-12-31T16:10:12");
+    Date date = this.dateFormat.parse("2011-12-26T16:10:12");
     YearWeek yearWeek = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2011, 12, 24), yearWeek.toLocalDate());
-    assertEquals(new LocalDate(2012, 01, 22), yearWeek.next().toLocalDate());
+    assertEquals(new LocalDate(2011, 12, 26), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2012, 01, 2), yearWeek.next().toLocalDate());
   }
   
 
@@ -51,16 +60,16 @@ public class YearWeekTest {
   public void previousAcrossMonths() throws ParseException {
     Date date = this.dateFormat.parse("2012-10-01T16:10:12");
     YearWeek yearWeek = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2012, 9, 30), yearWeek.toLocalDate());
-    assertEquals(new LocalDate(2012, 9, 23), yearWeek.previous().toLocalDate());
+    assertEquals(new LocalDate(2012, 10, 01), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2012, 9, 24), yearWeek.previous().toLocalDate());
   }
 
   @Test
   public void previousAcrosYears() throws ParseException {
-    Date date = this.dateFormat.parse("2012-01-01T16:10:12");
+    Date date = this.dateFormat.parse("2012-01-02T16:10:12");
     YearWeek yearWeek = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2011, 12, 24), yearWeek.toLocalDate());
-    assertEquals(new LocalDate(2011, 12, 17), yearWeek.previous().toLocalDate());
+    assertEquals(new LocalDate(2012, 01, 02), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2011, 12, 26), yearWeek.previous().toLocalDate());
   }
 
 }

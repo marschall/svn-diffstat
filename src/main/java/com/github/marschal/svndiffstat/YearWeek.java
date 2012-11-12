@@ -13,6 +13,7 @@ import org.joda.time.Months;
 import static org.jfree.chart.axis.DateTickUnitType.DAY;
 import static org.jfree.chart.axis.DateTickUnitType.MONTH;
 import static org.jfree.chart.axis.DateTickUnitType.YEAR;
+import static org.joda.time.DateTimeConstants.MONDAY;
 
 final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
 
@@ -48,8 +49,12 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
   }
 
   LocalDate toLocalDate() {
-    // TODO not sure if the is correct for end / star of year weeks
-    return new LocalDate(this.year, 1, 1).plusWeeks(this.week - 1);
+    // TODO is this really correct for end of year / start year
+    // split weeks?
+    return new LocalDate()
+      .withWeekyear(this.year)
+      .withWeekOfWeekyear(this.week)
+      .withDayOfWeek(MONDAY);
   }
 
   @Override
@@ -72,14 +77,26 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
   YearWeek previous() {
     LocalDate localDate = this.toLocalDate();
     int week = localDate.getWeekOfWeekyear();
-    return fromLocalDate(localDate.withWeekOfWeekyear(week - 1));
+    if (week == localDate.weekOfWeekyear().getMinimumValue()) {
+      return fromLocalDate(localDate
+          .withWeekyear(localDate.getWeekyear() - 1)
+          .withWeekOfWeekyear(localDate.weekOfWeekyear().getMaximumValue()));
+    } else {
+      return fromLocalDate(localDate.withWeekOfWeekyear(week - 1));
+    }
   }
 
   @Override
   YearWeek next() {
     LocalDate localDate = this.toLocalDate();
     int week = localDate.getWeekOfWeekyear();
-    return fromLocalDate(localDate.withWeekOfWeekyear(week + 1));
+    if (week == localDate.weekOfWeekyear().getMaximumValue()) {
+      return fromLocalDate(localDate
+          .withWeekyear(localDate.getWeekyear() + 1)
+          .withWeekOfWeekyear(localDate.weekOfWeekyear().getMinimumValue()));
+    } else {
+      return fromLocalDate(localDate.withWeekOfWeekyear(week + 1));
+    }
   }
 
   @Override
