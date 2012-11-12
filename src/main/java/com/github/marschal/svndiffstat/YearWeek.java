@@ -72,14 +72,14 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
   YearWeek previous() {
     LocalDate localDate = this.toLocalDate();
     int week = localDate.getWeekOfWeekyear();
-    return fromLocalDate(localDate.withWeekOfWeekyear(week + 1));
+    return fromLocalDate(localDate.withWeekOfWeekyear(week - 1));
   }
 
   @Override
   YearWeek next() {
     LocalDate localDate = this.toLocalDate();
     int week = localDate.getWeekOfWeekyear();
-    return fromLocalDate(localDate.withWeekOfWeekyear(week - 1));
+    return fromLocalDate(localDate.withWeekOfWeekyear(week + 1));
   }
 
   @Override

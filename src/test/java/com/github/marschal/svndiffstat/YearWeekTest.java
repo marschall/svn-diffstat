@@ -33,34 +33,34 @@ public class YearWeekTest {
   @Test
   public void nextAcrossMonths() throws ParseException {
     Date date = this.dateFormat.parse("2012-09-30T16:10:12");
-    YearWeek yearMonth = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2012, 9, 23), yearMonth.toLocalDate());
-    assertEquals(new LocalDate(2012, 9, 30), yearMonth.next().toLocalDate());
+    YearWeek yearWeek = YearWeek.fromDate(date);
+    assertEquals(new LocalDate(2012, 9, 23), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2012, 9, 30), yearWeek.next().toLocalDate());
   }
 
   @Test
   public void nextAcrosYears() throws ParseException {
     Date date = this.dateFormat.parse("2011-12-31T16:10:12");
-    YearWeek yearMonth = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2011, 12, 24), yearMonth.toLocalDate());
-    assertEquals(new LocalDate(2012, 01, 22), yearMonth.next().toLocalDate());
+    YearWeek yearWeek = YearWeek.fromDate(date);
+    assertEquals(new LocalDate(2011, 12, 24), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2012, 01, 22), yearWeek.next().toLocalDate());
   }
   
 
   @Test
   public void previousAcrossMonths() throws ParseException {
     Date date = this.dateFormat.parse("2012-10-01T16:10:12");
-    YearWeek yearMonth = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2012, 9, 30), yearMonth.toLocalDate());
-    assertEquals(new LocalDate(2012, 8, 26), yearMonth.previous().toLocalDate());
+    YearWeek yearWeek = YearWeek.fromDate(date);
+    assertEquals(new LocalDate(2012, 9, 30), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2012, 9, 23), yearWeek.previous().toLocalDate());
   }
 
   @Test
   public void previousAcrosYears() throws ParseException {
     Date date = this.dateFormat.parse("2012-01-01T16:10:12");
-    YearWeek yearMonth = YearWeek.fromDate(date);
-    assertEquals(new LocalDate(2011, 12, 24), yearMonth.toLocalDate());
-    assertEquals(new LocalDate(2011, 11, 19), yearMonth.previous().toLocalDate());
+    YearWeek yearWeek = YearWeek.fromDate(date);
+    assertEquals(new LocalDate(2011, 12, 24), yearWeek.toLocalDate());
+    assertEquals(new LocalDate(2011, 12, 17), yearWeek.previous().toLocalDate());
   }
 
 }
