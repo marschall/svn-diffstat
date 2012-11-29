@@ -78,9 +78,8 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
     LocalDate localDate = this.toLocalDate();
     int week = localDate.getWeekOfWeekyear();
     if (week == localDate.weekOfWeekyear().getMinimumValue()) {
-      return fromLocalDate(localDate
-          .withWeekyear(localDate.getWeekyear() - 1)
-          .withWeekOfWeekyear(localDate.weekOfWeekyear().getMaximumValue()));
+      LocalDate previoursYear = localDate.withWeekyear(localDate.getWeekyear() - 1);
+      return fromLocalDate(previoursYear.withWeekOfWeekyear(previoursYear.weekOfWeekyear().getMaximumValue()));
     } else {
       return fromLocalDate(localDate.withWeekOfWeekyear(week - 1));
     }
@@ -91,9 +90,8 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
     LocalDate localDate = this.toLocalDate();
     int week = localDate.getWeekOfWeekyear();
     if (week == localDate.weekOfWeekyear().getMaximumValue()) {
-      return fromLocalDate(localDate
-          .withWeekyear(localDate.getWeekyear() + 1)
-          .withWeekOfWeekyear(localDate.weekOfWeekyear().getMinimumValue()));
+      LocalDate nextYear = localDate.withWeekyear(localDate.getWeekyear() + 1);
+      return fromLocalDate(nextYear.withWeekOfWeekyear(nextYear.weekOfWeekyear().getMinimumValue()));
     } else {
       return fromLocalDate(localDate.withWeekOfWeekyear(week + 1));
     }
