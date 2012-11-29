@@ -47,6 +47,10 @@ I ran it on a subversion repository with about 240k revisions and it takes about
 ### Is it any good?
 Yes
 
+Travis CI
+---------
+[![Build Status](https://secure.travis-ci.org/marschall/svn-diffstat.png?branch=master)](https://travis-ci.org/marschall/svn-diffstat)
+
 Credits
 -------
 This project wouldn't have been possible without the work of others:
