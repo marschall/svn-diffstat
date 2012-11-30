@@ -9,6 +9,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
+import org.joda.time.Weeks;
 
 import static org.jfree.chart.axis.DateTickUnitType.DAY;
 import static org.jfree.chart.axis.DateTickUnitType.MONTH;
@@ -41,6 +42,12 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
   static YearWeek fromLocalDate(LocalDate localDate) {
     return new YearWeek((short) localDate.getWeekyear(),
         (byte) localDate.getWeekOfWeekyear());
+  }
+  
+  static int weeksBetween(Date first, Date second) {
+    LocalDate firstLocalDate = fromDate(first).toLocalDate();
+    LocalDate secondLocalDate = fromDate(second).toLocalDate();
+    return Weeks.weeksBetween(firstLocalDate, secondLocalDate).getWeeks();
   }
 
   @Override
