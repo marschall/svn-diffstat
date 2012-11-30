@@ -25,7 +25,7 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
     this.week = week;
   }
 
-  static final class YearMonthFactory implements TimeAxisKeyFactory {
+  static final class YearWeekFactory implements TimeAxisKeyFactory {
 
     @Override
     public YearWeek fromDate(Date date) {

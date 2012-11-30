@@ -9,12 +9,22 @@
  */
 package com.github.marschal.svndiffstat;
 
+import java.util.Date;
+
 import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.Month;
 import org.jfree.data.time.RegularTimePeriod;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+import org.joda.time.LocalDate;
+import org.joda.time.ReadablePartial;
+
+import static org.jfree.chart.axis.DateTickUnitType.DAY;
+import static org.jfree.chart.axis.DateTickUnitType.MONTH;
+import static org.jfree.chart.axis.DateTickUnitType.YEAR;
 
 
-public class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
+class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
   
   private final short year;
   private final byte month;
@@ -23,16 +33,48 @@ public class YearMonth extends TimeAxisKey implements Comparable<YearMonth> {
     this.year = year;
     this.month = month;
   }
+  
+  static final class YearMonthFactory implements TimeAxisKeyFactory {
+
+    @Override
+    public YearMonth fromDate(Date date) {
+      return YearMonth.fromDate(date);
+    }
+  }
+
+  static YearMonth fromDate(Date date) {
+    LocalDate localDate = new DateTime(date.getTime()).toLocalDate();
+    return fromLocalDate(localDate);
+  }
+  
+  static YearMonth fromLocalDate(LocalDate localDate) {
+    return new YearMonth((short) localDate.getYear(),
+        (byte) localDate.getMonthOfYear());
+  }
 
   @Override
   RegularTimePeriod toPeriod() {
     return new Month(this.month, this.year);
   }
 
+  ReadablePartial toPartial() {
+    return new org.joda.time.YearMonth(this.year, this.month);
+  }
+
   @Override
-  int unitsBetween(TimeAxisKey other, DateTickUnitType type) {
-    // TODO Auto-generated method stub
-    return 0;
+  int unitsBetween(TimeAxisKey key, DateTickUnitType type) {
+    YearMonth other = (YearMonth) key;
+    if (type == YEAR) {
+      return other.year - this.year;
+    } else if (type == MONTH) {
+      return (other.year - this.year) * 12
+          + (other.month - this.month);
+    } else if (type == DAY) {
+      Days daysBetween = Days.daysBetween(this.toPartial(), other.toPartial());
+      return daysBetween.getDays();
+    } else {
+      throw new IllegalArgumentException("unsupported tick type: " + type);
+    }
   }
 
   @Override
