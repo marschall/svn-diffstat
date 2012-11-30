@@ -129,11 +129,21 @@ class ResetOutputStream extends OutputStream {
       this.writePosition = length;
     }
   }
+  
+  
+  private boolean isAtEnd() {
+    return this.readPosition >= this.writePosition;
+  }
 
   private void parse() {
     if (!this.headerParsed) {
       // Index: path/to/file.extension
       this.expectMarker(this.indexMarker);
+      if (this.isAtEnd()) {
+        // can happen when there's no diff at all
+        // eg. just line endings changed;
+        return;
+      }
       // EOL
       this.consumeEol();
       // ===================================================================

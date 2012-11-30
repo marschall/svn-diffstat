@@ -34,12 +34,12 @@ For example
 FAQ
 ---
 
-### I'm getting NonWritableChannelException
+### I'm getting NonWritableChannelException on file:// checkouts
 ```
 Exception in thread "main" java.nio.channels.NonWritableChannelException
         at sun.nio.ch.FileChannelImpl.tryLock(FileChannelImpl.java:1014)
 ```
-Just try again.
+Just try again, somebody committed during the analysis.
 
 ### Does it scale?
 I ran it on a subversion repository with about 240k revisions and it takes about 20 minutes.
