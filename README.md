@@ -30,6 +30,12 @@ The following command line options are supported:
 For example
 
     java -Djava.awt.headless=true -jar svn-diffstat/target/svn-diffstat-1.0.0-SNAPSHOT.jar -d -a marschall -e java -f /Users/marschall/tmp/diffstat.png
+
+Sample
+------
+This is a sample chart generated from an actual code base.
+
+<img src="https://raw.github.com/marschall/svn-diffstat/master/src/site/sample.png" width="1200" height="600" alt="sample chart"/>
     
 FAQ
 ---
