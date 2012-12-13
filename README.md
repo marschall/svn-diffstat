@@ -35,7 +35,7 @@ Sample
 ------
 This is a sample chart generated from an actual code base.
 
-<img src="https://raw.github.com/marschall/svn-diffstat/master/src/site/sample.png" width="1200" height="600" alt="sample chart"/>
+<img src="https://raw.github.com/marschall/svn-diffstat/master/src/site/sample.png" width="800" height="400" alt="sample chart"/>
     
 FAQ
 ---
