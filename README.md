@@ -1,4 +1,4 @@
-SVN DIFFSTAT
+SVN DIFFSTAT [![Build Status](https://secure.travis-ci.org/marschall/svn-diffstat.png?branch=master)](https://travis-ci.org/marschall/svn-diffstat)
 ============
 Creates git like diff stat over a whole svn repository. Only one author and a certain set of files are considered. In addition a chart similar to [Code Frequency](https://github.com/blog/1093-introducing-the-new-github-graphs) is created.
 
@@ -52,10 +52,6 @@ I ran it on a subversion repository with about 240k revisions and it takes about
 
 ### Is it any good?
 Yes
-
-Travis CI
----------
-[![Build Status](https://secure.travis-ci.org/marschall/svn-diffstat.png?branch=master)](https://travis-ci.org/marschall/svn-diffstat)
 
 Credits
 -------
