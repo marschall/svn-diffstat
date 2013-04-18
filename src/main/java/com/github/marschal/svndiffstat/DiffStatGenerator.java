@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.channels.NonWritableChannelException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -175,19 +176,40 @@ class DiffStatGenerator {
     DiffStatDiffGenerator diffGenerator = new DiffStatDiffGenerator(diffClient.getDiffGenerator(),
         configuration, reporter, result);
     diffClient.setDiffGenerator(diffGenerator);
-    SVNDepth depth = SVNDepth.INFINITY;
-    boolean useAncestry = true;
-    //diffClient.setGitDiffFormat(true);
-    Collection<String> changeLists = null;
     File workingCopy = configuration.getWorkingCopy();
     for (CommitCoordinate coordinate : coordinates) {
       long revision = coordinate.getRevision();
       SVNRevision newRevision = SVNRevision.create(revision);
       SVNRevision oldRevision = SVNRevision.create(revision - 1L);
-      diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
+      doDiff(diffClient, result, workingCopy, newRevision, oldRevision);
     }
 
     return diffGenerator.getDiffStats();
+  }
+
+
+  private static void doDiff(SVNDiffClient diffClient, ResetOutputStream result, File workingCopy, SVNRevision newRevision, SVNRevision oldRevision) throws SVNException {
+    SVNDepth depth = SVNDepth.INFINITY;
+    boolean useAncestry = true;
+    //diffClient.setGitDiffFormat(true);
+    Collection<String> changeLists = null;
+    int retryCount = 0;
+    NonWritableChannelException lastException = null;
+    while (retryCount < 3) {
+      try {
+        diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
+      } catch (NonWritableChannelException e) {
+        try {
+          Thread.sleep((int) Math.pow(10, retryCount) * 100);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException("interrupted", e);
+        }
+        lastException = e;
+        retryCount += 3;
+      }
+    }
+    throw lastException;
   }
   
 
