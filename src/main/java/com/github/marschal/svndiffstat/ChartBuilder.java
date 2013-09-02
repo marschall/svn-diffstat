@@ -153,7 +153,7 @@ final class ChartBuilder {
     plot.setRangeAxis(1, totalAxis);
     plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
 
-    XYDatasetAndTotal datasetAndTotal = createTotalDataset("Total Lines", aggregatedDiffstats);
+    XYDatasetAndMax datasetAndTotal = createTotalDataset("Total Lines", aggregatedDiffstats);
     XYDataset totalDataSet = datasetAndTotal.dataset;
     plot.setDataset(1, totalDataSet);
     plot.mapDatasetToRangeAxis(1, 1);
@@ -165,7 +165,7 @@ final class ChartBuilder {
         new float[]{6.0f * configuration.multiplierFloat(), 3.0f * configuration.multiplierFloat()} , 0.0f));
     plot.setRenderer(1, totalRenderer);
 
-    totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.total)));
+    totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.max)));
 
     return chart;
   }
@@ -231,8 +231,9 @@ final class ChartBuilder {
     return new XYDatasetMinMax(dataset, minimum, maximum);
   }
 
-  private static XYDatasetAndTotal createTotalDataset(String name, SortedMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
+  private static XYDatasetAndMax createTotalDataset(String name, SortedMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
     int total = 0;
+    int max = Integer.MIN_VALUE;
 
     TimeSeries totalSeries = new TimeSeries(name);
     for (Entry<TimeAxisKey, DiffStat> entry : aggregatedDiffstats.entrySet()) {
@@ -240,13 +241,14 @@ final class ChartBuilder {
       DiffStat diffStat = entry.getValue();
       RegularTimePeriod period = timeAxisKey.toPeriod();
       total += diffStat.delta();
+      max = max(total, max);
       totalSeries.add(period, Integer.valueOf(total));
     }
 
     TimeSeriesCollection dataset = new TimeSeriesCollection();
     dataset.addSeries(totalSeries);
 
-    return new XYDatasetAndTotal(dataset, total);
+    return new XYDatasetAndMax(dataset, max);
   }
 
   static final class XYDatasetMinMax {
@@ -262,14 +264,14 @@ final class ChartBuilder {
 
   }
 
-  static final class XYDatasetAndTotal {
+  static final class XYDatasetAndMax {
 
     final XYDataset dataset;
-    final int total;
+    final int max;
 
-    XYDatasetAndTotal(XYDataset dataset, int total) {
+    XYDatasetAndMax(XYDataset dataset, int total) {
       this.dataset = dataset;
-      this.total = total;
+      this.max = total;
     }
 
   }
