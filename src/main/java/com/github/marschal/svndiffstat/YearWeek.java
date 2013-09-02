@@ -1,5 +1,10 @@
 package com.github.marschal.svndiffstat;
 
+import static org.jfree.chart.axis.DateTickUnitType.DAY;
+import static org.jfree.chart.axis.DateTickUnitType.MONTH;
+import static org.jfree.chart.axis.DateTickUnitType.YEAR;
+import static org.joda.time.DateTimeConstants.MONDAY;
+
 import java.util.Date;
 
 import org.jfree.chart.axis.DateTickUnitType;
@@ -10,11 +15,6 @@ import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
 import org.joda.time.Weeks;
-
-import static org.jfree.chart.axis.DateTickUnitType.DAY;
-import static org.jfree.chart.axis.DateTickUnitType.MONTH;
-import static org.jfree.chart.axis.DateTickUnitType.YEAR;
-import static org.joda.time.DateTimeConstants.MONDAY;
 
 final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
 

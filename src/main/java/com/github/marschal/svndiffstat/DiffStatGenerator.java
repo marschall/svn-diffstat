@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.channels.NonWritableChannelException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -33,9 +32,9 @@ import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 import com.github.marschal.svndiffstat.TimeAxisKey.TimeAxisKeyFactory;
-import com.github.marschal.svndiffstat.YearWeek.YearWeekFactory;
-import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
 import com.github.marschal.svndiffstat.YearMonth.YearMonthFactory;
+import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
+import com.github.marschal.svndiffstat.YearWeek.YearWeekFactory;
 
 
 class DiffStatGenerator {

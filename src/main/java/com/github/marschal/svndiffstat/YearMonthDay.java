@@ -1,5 +1,9 @@
 package com.github.marschal.svndiffstat;
 
+import static org.jfree.chart.axis.DateTickUnitType.DAY;
+import static org.jfree.chart.axis.DateTickUnitType.MONTH;
+import static org.jfree.chart.axis.DateTickUnitType.YEAR;
+
 import java.util.Date;
 
 import org.jfree.chart.axis.DateTickUnitType;
@@ -9,10 +13,6 @@ import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.LocalDate;
 import org.joda.time.Months;
-
-import static org.jfree.chart.axis.DateTickUnitType.DAY;
-import static org.jfree.chart.axis.DateTickUnitType.MONTH;
-import static org.jfree.chart.axis.DateTickUnitType.YEAR;
 
 final class YearMonthDay extends TimeAxisKey implements Comparable<YearMonthDay> {
 

@@ -9,12 +9,12 @@
  */
 package com.github.marschal.svndiffstat;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class DiffStatGeneratorTest {

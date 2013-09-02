@@ -9,6 +9,8 @@
  */
 package com.github.marschal.svndiffstat;
 
+import static org.junit.Assert.assertEquals;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,8 +19,6 @@ import java.util.Date;
 import org.jfree.chart.axis.DateTickUnitType;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class YearMonthTest {
