@@ -193,23 +193,7 @@ class DiffStatGenerator {
     boolean useAncestry = true;
     //diffClient.setGitDiffFormat(true);
     Collection<String> changeLists = null;
-    int retryCount = 0;
-    NonWritableChannelException lastException = null;
-    while (retryCount < 3) {
-      try {
-        diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
-      } catch (NonWritableChannelException e) {
-        try {
-          Thread.sleep((int) Math.pow(10, retryCount) * 100);
-        } catch (InterruptedException ie) {
-          Thread.currentThread().interrupt();
-          throw new RuntimeException("interrupted", e);
-        }
-        lastException = e;
-        retryCount += 3;
-      }
-    }
-    throw lastException;
+    diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
   }
   
 
