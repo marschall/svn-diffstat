@@ -25,6 +25,8 @@ The following command line options are supported:
 	<dd>Optional. Render in double the resolution, useful for retina Macs. Defaults to <code>false</code>.</dd>
 	<dt>-max -m</dt>
 	<dd>Optional. Commits with more than this number of lines changed will be ignored. Defaults to <code>10000</code>.</dd>
+	<dt>-protocol -p</dt>
+	<dd>Optional. Only initialize support for the given protocol. Options: <code>fs</code>, <code>dav</code>, <code>svn</code>.</dd>
 </dl>
 
 For example

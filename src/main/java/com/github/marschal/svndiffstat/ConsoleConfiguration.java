@@ -35,6 +35,11 @@ public class ConsoleConfiguration {
       description = "The file where to save the generated chart",
       required = true)
   String savePath;
+  
+  @Parameter(names = {"-protocol", "-p"},
+      description = "Only initialize support for the given protocol. Options: fs dav svn",
+      validateValueWith = ProtocolParameterValidator.class)
+  String protocol;
 
 
 }

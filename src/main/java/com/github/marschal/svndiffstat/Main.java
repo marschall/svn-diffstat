@@ -29,7 +29,7 @@ public class Main {
       return;
     }
     
-    init();
+    init(configuration);
     ProgressReporter reporter = new ProgressReporter(System.out);
     NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffStats = DiffStatGenerator.getData(configuration, reporter);
 
@@ -55,10 +55,27 @@ public class Main {
 
   }
 
-  private static void init() {
-    FSRepositoryFactory.setup();
-    DAVRepositoryFactory.setup();
-    SVNRepositoryFactoryImpl.setup();
+  private static void init(DiffStatConfiguration configuration) {
+    String protocol = configuration.getProtocol();
+    if (protocol == null) {
+      FSRepositoryFactory.setup();
+      DAVRepositoryFactory.setup();
+      SVNRepositoryFactoryImpl.setup();
+    } else {
+      switch (protocol) {
+        case ProtocolParameterValidator.FILE:
+          FSRepositoryFactory.setup();
+          break;
+        case ProtocolParameterValidator.DAV:
+          DAVRepositoryFactory.setup();
+          break;
+        case ProtocolParameterValidator.SVN:
+          SVNRepositoryFactoryImpl.setup();
+          break;
+        default:
+          throw new AssertionError("unknown value: " + protocol + " should not be reachable, should have been validate earlier");
+      }
+    }
   }
 
   private static DiffStatConfiguration parse(String[] args) {
@@ -77,7 +94,7 @@ public class Main {
     Set<String> extensions = toSet(configuration.extensions);
     Path savePath = Paths.get(configuration.savePath);
     boolean doubleSize = configuration.doubleSize;
-    return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max);
+    return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max, configuration.protocol);
   }
 
   static <T> Set<T> toSet(List<T> list) {
