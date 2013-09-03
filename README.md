@@ -55,6 +55,12 @@ I ran it on a subversion repository with about 240k revisions and it takes about
 ### Is it any good?
 Yes
 
+### What's the latest SVN version it supports?
+1.7, you can try building with 1.8.
+
+### What Java version does it require?
+1.7
+
 Credits
 -------
 This project wouldn't have been possible without the work of others:
