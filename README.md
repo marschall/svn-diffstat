@@ -26,7 +26,7 @@ The following command line options are supported:
 	<dt>-max -m</dt>
 	<dd>Optional. Commits with more than this number of lines changed will be ignored. Defaults to <code>10000</code>.</dd>
 	<dt>-protocol -p</dt>
-	<dd>Optional. Only initialize support for the given protocol. Options: <code>fs</code>, <code>dav</code>, <code>svn</code>.</dd>
+	<dd>Optional. Only initialize support for the given protocol. Options: <code>file</code>, <code>dav</code>, <code>svn</code>.</dd>
 </dl>
 
 For example

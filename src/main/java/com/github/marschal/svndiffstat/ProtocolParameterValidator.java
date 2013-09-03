@@ -5,7 +5,7 @@ import com.beust.jcommander.ParameterException;
 
 public class ProtocolParameterValidator implements IValueValidator<String> {
   
-  static final String FILE = "fs";
+  static final String FILE = "file";
   static final String DAV = "dav";
   static final String SVN = "svn";
 
