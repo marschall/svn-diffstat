@@ -167,6 +167,10 @@
           <artifactId>xml-apis</artifactId>
           <groupId>xml-apis</groupId>
         </exclusion>
+        <exclusion>
+          <artifactId>itext</artifactId>
+          <groupId>com.lowagie</groupId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
