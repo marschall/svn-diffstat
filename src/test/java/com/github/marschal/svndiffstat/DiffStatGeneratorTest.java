@@ -15,6 +15,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import org.junit.Test;
+import org.threeten.bp.LocalDate;
 
 
 public class DiffStatGeneratorTest {
@@ -22,8 +23,8 @@ public class DiffStatGeneratorTest {
   @Test
   public void insertZeroDataPointsNothingBetween() {
     NavigableMap<TimeAxisKey, DiffStat> diffStats = new TreeMap<>();
-    YearMonthDay firstKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 2);
-    YearMonthDay secondKey = new YearMonthDay((short) 2012, (byte) 1, (byte) 3);
+    LocalDate firstKey = LocalDate.of(2012, 1, 2);
+    LocalDate secondKey = LocalDate.of(2012, 1, 3);
     
     diffStats.put(firstKey, new DiffStat(1, 1));
     diffStats.put(secondKey, new DiffStat(2, 2));

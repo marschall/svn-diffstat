@@ -32,8 +32,8 @@ import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 import com.github.marschal.svndiffstat.TimeAxisKey.TimeAxisKeyFactory;
-import com.github.marschal.svndiffstat.YearMonth.YearMonthFactory;
-import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
+import com.github.marschal.svndiffstat.YearMonthWrapper.YearMonthFactory;
+import com.github.marschal.svndiffstat.LocalDateWrapper.YearMonthDayFactory;
 import com.github.marschal.svndiffstat.YearWeek.YearWeekFactory;
 
 
@@ -131,7 +131,7 @@ class DiffStatGenerator {
     Date first = coordinates.get(0).getDate();
     Date last = coordinates.get(coordinates.size() - 1).getDate();
 
-    if (YearMonthDay.daysBetween(first, last) >= 100) {
+    if (LocalDateWrapper.daysBetween(first, last) >= 100) {
       if (YearWeek.weeksBetween(first, last) >= 100) {
         return new YearMonthFactory();
       } else {
