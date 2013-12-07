@@ -88,7 +88,7 @@ public class Main {
       return null;
     }
 
-    File workingCopy = new File("").getAbsoluteFile();
+    File workingCopy = Paths.get("").toAbsolutePath().toFile();
     Dimension dimension = new Dimension(configuration.width, configuration.height);
     Set<String> authors = toSet(configuration.authors);
     Set<String> extensions = toSet(configuration.extensions);
