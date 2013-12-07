@@ -4,7 +4,7 @@
 
   <groupId>com.github.marschall</groupId>
   <artifactId>svn-diffstat</artifactId>
-  <version>1.1.1-SNAPSHOT</version>
+  <version>1.2.0-SNAPSHOT</version>
   <inceptionYear>2012</inceptionYear>
   <url>https://github.com/marschall/svn-diffstat</url>
   <name>SVN Diffstat</name>
@@ -123,7 +123,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>2.1</version>
+          <version>2.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
@@ -147,7 +147,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.4.1</version>
+          <version>2.4.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-scm-plugin</artifactId>
@@ -172,7 +172,7 @@
     <dependency>
       <groupId>org.tmatesoft.svnkit</groupId>
       <artifactId>svnkit</artifactId>
-      <version>1.7.8</version>
+      <version>1.8.0</version>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
@@ -182,7 +182,7 @@
     <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>
-      <version>1.30</version>
+      <version>1.32</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
