@@ -25,6 +25,8 @@ The following command line options are supported:
 	<dd>Optional. Render in double the resolution, useful for retina Macs. Defaults to <code>false</code>.</dd>
 	<dt>-max -m</dt>
 	<dd>Optional. Commits with more than this number of lines changed will be ignored. Defaults to <code>10000</code>.</dd>
+	<dt>-protocol -p</dt>
+	<dd>Optional. Only initialize support for the given protocol. Options: <code>file</code>, <code>dav</code>, <code>svn</code>.</dd>
 </dl>
 
 For example
@@ -52,6 +54,31 @@ I ran it on a subversion repository with about 240k revisions and it takes about
 
 ### Is it any good?
 Yes
+
+### What's the latest SVN version it supports?
+1.8
+
+### What Java version does it require?
+1.7
+
+### Why does my local build not find svnkit?
+You need this in your settings. xml
+
+```xml
+   <profile>
+      <id>tmatesoft</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+
+      <repositories>
+        <repository>
+          <id>tmatesoft-releases</id>
+          <url>http://maven.tmatesoft.com/content/repositories/releases/</url>
+        </repository>
+      </repositories>
+    </profile>
+```
 
 Credits
 -------

@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.channels.NonWritableChannelException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -33,9 +32,9 @@ import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 import com.github.marschal.svndiffstat.TimeAxisKey.TimeAxisKeyFactory;
-import com.github.marschal.svndiffstat.YearWeek.YearWeekFactory;
-import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
 import com.github.marschal.svndiffstat.YearMonth.YearMonthFactory;
+import com.github.marschal.svndiffstat.YearMonthDay.YearMonthDayFactory;
+import com.github.marschal.svndiffstat.YearWeek.YearWeekFactory;
 
 
 class DiffStatGenerator {
@@ -193,23 +192,7 @@ class DiffStatGenerator {
     boolean useAncestry = true;
     //diffClient.setGitDiffFormat(true);
     Collection<String> changeLists = null;
-    int retryCount = 0;
-    NonWritableChannelException lastException = null;
-    while (retryCount < 3) {
-      try {
-        diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
-      } catch (NonWritableChannelException e) {
-        try {
-          Thread.sleep((int) Math.pow(10, retryCount) * 100);
-        } catch (InterruptedException ie) {
-          Thread.currentThread().interrupt();
-          throw new RuntimeException("interrupted", e);
-        }
-        lastException = e;
-        retryCount += 3;
-      }
-    }
-    throw lastException;
+    diffClient.doDiff(workingCopy, oldRevision, workingCopy, newRevision, depth, useAncestry, result, changeLists);
   }
   
 

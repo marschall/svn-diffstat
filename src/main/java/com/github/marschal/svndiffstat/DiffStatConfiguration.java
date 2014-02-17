@@ -14,8 +14,9 @@ final class DiffStatConfiguration {
   private final Path savePath;
   private final boolean doubleSize;
   private final int maxChanges;
+  private String protocol;
 
-  DiffStatConfiguration(Set<String> authors, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize, int maxChanges) {
+  DiffStatConfiguration(Set<String> authors, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize, int maxChanges, String protocol) {
     this.authors = authors;
     this.includedFiles = includedFiles;
     this.workingCopy = workingCopy;
@@ -23,6 +24,7 @@ final class DiffStatConfiguration {
     this.savePath = savePath;
     this.doubleSize = doubleSize;
     this.maxChanges = maxChanges;
+    this.protocol = protocol;
   }
 
   Set<String> getAuthors() {
@@ -63,6 +65,10 @@ final class DiffStatConfiguration {
 
   int getMaxChanges() {
     return this.maxChanges;
+  }
+  
+  public String getProtocol() {
+    return protocol;
   }
 
 
