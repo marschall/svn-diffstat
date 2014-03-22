@@ -155,7 +155,7 @@ class DiffStatGenerator {
   }
 
   private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
-    boolean stopOnCopy = true;
+    boolean stopOnCopy = false;
     boolean discoverChangedPaths = false;
     SVNRevision startRevision = SVNRevision.create(1L);
     SVNRevision endRevision = SVNRevision.HEAD;
