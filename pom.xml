@@ -4,7 +4,7 @@
 
   <groupId>com.github.marschall</groupId>
   <artifactId>svn-diffstat</artifactId>
-  <version>1.1.1-SNAPSHOT</version>
+  <version>1.2.0-SNAPSHOT</version>
   <inceptionYear>2012</inceptionYear>
   <url>https://github.com/marschall/svn-diffstat</url>
   <name>SVN Diffstat</name>
@@ -179,13 +179,11 @@
       <artifactId>threetenbp</artifactId>
       <version>0.8.1</version>
     </dependency>
-    <!-- 
     <dependency>
       <groupId>org.threeten</groupId>
-      <artifactId>threetenbp-extra</artifactId>
-      <version>0.2</version>
+      <artifactId>threeten-extra</artifactId>
+      <version>0.8</version>
     </dependency>
-     -->
     <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>

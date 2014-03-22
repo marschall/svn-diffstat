@@ -21,6 +21,7 @@ import org.jfree.data.time.RegularTimePeriod;
 import org.threeten.bp.Instant;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.YearMonth;
+import org.threeten.extra.Days;
 
 
 class YearMonthWrapper extends TimeAxisKey implements Comparable<YearMonthWrapper> {
@@ -49,6 +50,12 @@ class YearMonthWrapper extends TimeAxisKey implements Comparable<YearMonthWrappe
   RegularTimePeriod toPeriod() {
     return new Month(this.yearMonth.getMonthValue(), this.yearMonth.getYear());
   }
+  
+  static int daysBetween(Date first, Date second) {
+    LocalDate firstLocalDate = LocalDateUtil.fromDate(first);
+    LocalDate secondLocalDate = LocalDateUtil.fromDate(second);
+    return Days.between(firstLocalDate, secondLocalDate).getAmount();
+  }
 
   @Override
   int unitsBetween(TimeAxisKey key, DateTickUnitType type) {
@@ -59,8 +66,8 @@ class YearMonthWrapper extends TimeAxisKey implements Comparable<YearMonthWrappe
       return (other.yearMonth.getYear() - this.yearMonth.getYear()) * 12
           + (other.yearMonth.getMonthValue() - this.yearMonth.getMonthValue());
     } else if (type == DAY) {
-      Days daysBetween = Days.daysBetween(this.yearMonth, other.yearMonth);
-      return daysBetween.getDays();
+      Days daysBetween = Days.between(this.yearMonth, other.yearMonth);
+      return daysBetween.getAmount();
     } else {
       throw new IllegalArgumentException("unsupported tick type: " + type);
     }

@@ -3,18 +3,15 @@ package com.github.marschal.svndiffstat;
 import static org.jfree.chart.axis.DateTickUnitType.DAY;
 import static org.jfree.chart.axis.DateTickUnitType.MONTH;
 import static org.jfree.chart.axis.DateTickUnitType.YEAR;
-import static org.joda.time.DateTimeConstants.MONDAY;
 
 import java.util.Date;
 
 import org.jfree.chart.axis.DateTickUnitType;
 import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.Week;
-import org.joda.time.DateTime;
-import org.joda.time.Days;
-import org.joda.time.LocalDate;
-import org.joda.time.Months;
-import org.joda.time.Weeks;
+import org.threeten.bp.LocalDate;
+import org.threeten.extra.Days;
+import org.threeten.extra.Months;
 
 final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
 
@@ -35,7 +32,7 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
   }
 
   static YearWeek fromDate(Date date) {
-    LocalDate localDate = new DateTime(date.getTime()).toLocalDate();
+    LocalDate localDate = LocalDateUtil.fromDate(date);
     return fromLocalDate(localDate);
   }
 
@@ -70,8 +67,8 @@ final class YearWeek extends TimeAxisKey implements Comparable<YearWeek> {
     if (type == YEAR) {
       return other.year - this.year;
     } else if (type == MONTH) {
-      Months monthsBetween = Months.monthsBetween(this.toLocalDate(), other.toLocalDate());
-      return monthsBetween.getMonths();
+      Months monthsBetween = Months.between(this.toLocalDate(), other.toLocalDate());
+      return monthsBetween.getAmount();
     } else if (type == DAY) {
       Days daysBetween = Days.daysBetween(this.toLocalDate(), other.toLocalDate());
       return daysBetween.getDays();

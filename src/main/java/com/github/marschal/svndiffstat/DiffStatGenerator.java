@@ -131,7 +131,7 @@ class DiffStatGenerator {
     Date first = coordinates.get(0).getDate();
     Date last = coordinates.get(coordinates.size() - 1).getDate();
 
-    if (LocalDateWrapper.daysBetween(first, last) >= 100) {
+    if (YearMonthWrapper.daysBetween(first, last) >= 100) {
       if (YearWeek.weeksBetween(first, last) >= 100) {
         return new YearMonthFactory();
       } else {
