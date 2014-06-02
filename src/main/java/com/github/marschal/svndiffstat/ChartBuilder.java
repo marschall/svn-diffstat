@@ -153,11 +153,11 @@ final class ChartBuilder {
     plot.setRangeAxis(1, totalAxis);
     plot.setRangeAxisLocation(1, AxisLocation.BOTTOM_OR_RIGHT);
 
-    XYDatasetAndMax datasetAndTotal = createTotalDataset("Total Lines", aggregatedDiffstats);
+    XYDatasetMinMax datasetAndTotal = createTotalDataset("Total Lines", aggregatedDiffstats);
     XYDataset totalDataSet = datasetAndTotal.dataset;
     plot.setDataset(1, totalDataSet);
     plot.mapDatasetToRangeAxis(1, 1);
-    //        XYItemRenderer totalRenderer = new XYSplineRenderer();
+    // XYItemRenderer totalRenderer = new XYSplineRenderer();
     XYItemRenderer totalRenderer = new StandardXYItemRenderer();
     totalRenderer.setSeriesPaint(0, TOTAL_FILL);
     totalRenderer.setSeriesStroke(0, new BasicStroke(strokeWidth, CAP_ROUND, JOIN_ROUND,
@@ -165,7 +165,7 @@ final class ChartBuilder {
         new float[]{6.0f * configuration.multiplierFloat(), 3.0f * configuration.multiplierFloat()} , 0.0f));
     plot.setRenderer(1, totalRenderer);
 
-    totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.max)));
+    totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.max + abs(datasetAndTotal.min))));
 
     return chart;
   }
@@ -231,9 +231,10 @@ final class ChartBuilder {
     return new XYDatasetMinMax(dataset, minimum, maximum);
   }
 
-  private static XYDatasetAndMax createTotalDataset(String name, SortedMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
+  private static XYDatasetMinMax createTotalDataset(String name, SortedMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
     int total = 0;
-    int max = Integer.MIN_VALUE;
+    int maximum = Integer.MIN_VALUE;
+    int minimum = 0;
 
     TimeSeries totalSeries = new TimeSeries(name);
     for (Entry<TimeAxisKey, DiffStat> entry : aggregatedDiffstats.entrySet()) {
@@ -241,14 +242,15 @@ final class ChartBuilder {
       DiffStat diffStat = entry.getValue();
       RegularTimePeriod period = timeAxisKey.toPeriod();
       total += diffStat.delta();
-      max = max(total, max);
+      maximum = max(total, maximum);
+      minimum = min(total, minimum);
       totalSeries.add(period, Integer.valueOf(total));
     }
 
     TimeSeriesCollection dataset = new TimeSeriesCollection();
     dataset.addSeries(totalSeries);
 
-    return new XYDatasetAndMax(dataset, max);
+    return new XYDatasetMinMax(dataset, minimum, maximum);
   }
 
   static final class XYDatasetMinMax {
@@ -260,18 +262,6 @@ final class ChartBuilder {
       this.dataset = dataset;
       this.min = min;
       this.max = max;
-    }
-
-  }
-
-  static final class XYDatasetAndMax {
-
-    final XYDataset dataset;
-    final int max;
-
-    XYDatasetAndMax(XYDataset dataset, int total) {
-      this.dataset = dataset;
-      this.max = total;
     }
 
   }
