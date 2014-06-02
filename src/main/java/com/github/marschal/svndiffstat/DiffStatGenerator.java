@@ -56,6 +56,8 @@ class DiffStatGenerator {
     NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
     insertZeroDataPoints(aggregatedDiffstats);
     reporter.aggregationDone(aggregatedDiffstats);
+    
+    reporter.finalReport();
 
     return aggregatedDiffstats;
   }
@@ -226,16 +228,19 @@ class DiffStatGenerator {
     private final Set<String> authors;
     private final List<CommitCoordinate> coordinates;
     private final ProgressReporter reporter;
+    private int encountered;
 
     RevisionCollector(DiffStatConfiguration configuration, ProgressReporter reporter) {
       this.authors = configuration.getAuthors();
       this.reporter = reporter;
       this.coordinates = new ArrayList<>();
+      this.encountered = 0;
     }
 
 
     @Override
     public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
+      this.encountered += 1;
       long revision = logEntry.getRevision();
       String logEntryAuthor = logEntry.getAuthor();
       if (this.authors.contains(logEntryAuthor)) {
@@ -248,6 +253,10 @@ class DiffStatGenerator {
 
     List<CommitCoordinate> getCoordinates() {
       return this.coordinates;
+    }
+    
+    int getEncountered() {
+      return this.encountered;
     }
 
   }

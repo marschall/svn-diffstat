@@ -13,12 +13,17 @@ final class ProgressReporter {
 
   private final PrintStream out;
   private long loggingStart;
+  private long loggingEnd;
+  private int loggingSize;
   private long parsingStart;
+  private long parsingEnd;
+  private int parsingSize;
   private long aggregationStart;
+  private long aggregationEnd;
+  private int aggregationSize;
   private long lastParsedRevision;
   private long lastRevisionLoggedTime;
   private long lastRevisionParsedTime;
-
 
   ProgressReporter(PrintStream out) {
     this.out = out;
@@ -32,13 +37,8 @@ final class ProgressReporter {
   }
 
   void revisionLoggingDone(List<?> coordinates) {
-    long loggingEnd = System.currentTimeMillis();
-    long duration = loggingEnd - this.loggingStart;
-    if (duration >= 2000) {
-      this.out.printf("logged: %d revisions is %ds%n", coordinates.size(), duration / 1000);
-    } else {
-      this.out.printf("logged: %d revisions is %dms%n", coordinates.size(), duration);
-    }
+    this.loggingEnd = System.currentTimeMillis();
+    this.loggingSize = coordinates.size();
   }
 
   void revisionLogged(long revision) {
@@ -54,13 +54,9 @@ final class ProgressReporter {
   }
 
   void revisionParsinDone(Map<?, DiffStat> diffStats) {
-    long parsingEnd = System.currentTimeMillis();
-    long duration = parsingEnd - this.parsingStart;
-    if (duration >= 2000) {
-      this.out.printf("parsed %d commits in %ds%n", diffStats.size(), duration / 1000);
-    } else {
-      this.out.printf("parsed %d commits in %dms%n", diffStats.size(), duration);
-    }
+    this.parsingEnd = System.currentTimeMillis();
+    this.parsingSize = diffStats.size();
+    
 
     DiffStat total = new DiffStat(0, 0);
     for (DiffStat diffStat : diffStats.values()) {
@@ -85,12 +81,40 @@ final class ProgressReporter {
   }
 
   void aggregationDone(SortedMap<?, ?> aggregatedDiffstats) {
-    long aggregationEnd = System.currentTimeMillis();
-    long duration = aggregationEnd - this.aggregationStart;
+    this.aggregationEnd = System.currentTimeMillis();
+    this.aggregationSize = aggregatedDiffstats.size();
+  }
+  
+  void finalReport() {
+    this.reportLogging();
+    this.reportParsing();
+    this.reportAggregation();
+  }
+
+  private void reportAggregation() {
+    long duration = this.aggregationEnd - this.aggregationStart;
     if (duration >= 2000) {
-      this.out.printf("aggregated into %d data points %ds%n", aggregatedDiffstats.size(), duration / 1000);
+      this.out.printf("aggregated into %d data points %ds%n", this.aggregationSize, duration / 1000);
     } else {
-      this.out.printf("aggregated into %d data points %dms%n", aggregatedDiffstats.size(), duration);
+      this.out.printf("aggregated into %d data points %dms%n", this.aggregationSize, duration);
+    }
+  }
+
+  private void reportParsing() {
+    long duration = this.parsingEnd - this.parsingStart;
+    if (duration >= 2000) {
+      this.out.printf("parsed %d commits in %ds%n", this.parsingSize, duration / 1000);
+    } else {
+      this.out.printf("parsed %d commits in %dms%n", this.parsingSize, duration);
+    }
+  }
+
+  private void reportLogging() {
+    long duration = this.loggingEnd - this.loggingStart;
+    if (duration >= 2000) {
+      this.out.printf("logged: %d revisions is %ds%n", this.loggingSize, duration / 1000);
+    } else {
+      this.out.printf("logged: %d revisions is %dms%n", this.loggingSize, duration);
     }
   }
 
