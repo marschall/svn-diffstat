@@ -94,7 +94,9 @@ public class Main {
     Set<String> extensions = toSet(configuration.extensions);
     Path savePath = Paths.get(configuration.savePath);
     boolean doubleSize = configuration.doubleSize;
-    return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max, configuration.protocol);
+    TickConfiguration dateAxisTick = new TickConfiguration(configuration.dateAxisTickLower, configuration.dateAxisTickUpper);
+    TickConfiguration valueAxisTick = new TickConfiguration(configuration.valueAxisTickLower, configuration.valueAxisTickUpper);
+    return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max, configuration.protocol, dateAxisTick, valueAxisTick);
   }
 
   static <T> Set<T> toSet(List<T> list) {

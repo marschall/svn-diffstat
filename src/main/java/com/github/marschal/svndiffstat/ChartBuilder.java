@@ -52,7 +52,6 @@ final class ChartBuilder {
   static final Color REMOVED_STROKE = new Color(0xAD, 0x10, 0x17);
   static final Color AXIS_LINE_COLOR = new Color(0xEE, 0xEE, 0xEE);
 
-
   static void displayChard(final JFreeChart chart, final DiffStatConfiguration configuration) {
 
     SwingUtilities.invokeLater(new Runnable() {
@@ -103,7 +102,7 @@ final class ChartBuilder {
     dateAxis.setDateFormatOverride(new SimpleDateFormat("MM/yy"));
     dateAxis.setTickLabelFont(helvetica);
     dateAxis.setAxisLineVisible(false);
-    dateAxis.setTickUnit(computeDateTickUnit(aggregatedDiffstats));
+    dateAxis.setTickUnit(computeDateTickUnit(aggregatedDiffstats, configuration.getDateAxisTick()));
     RectangleInsets insets = new RectangleInsets(8.0d * configuration.multiplierDouble(),
         4.0d * configuration.multiplierDouble(),
         4.0d * configuration.multiplierDouble(),
@@ -125,7 +124,7 @@ final class ChartBuilder {
     additionDeletionAxis.setTickMarkInsideLength(5.0f * configuration.multiplierFloat());
     additionDeletionAxis.setTickMarkOutsideLength(0.0f);
     additionDeletionAxis.setTickMarkStroke(new BasicStroke(2.0f * configuration.multiplierFloat()));
-    additionDeletionAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetMinMax.max + abs(datasetMinMax.min))));
+    additionDeletionAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetMinMax.max + abs(datasetMinMax.min), configuration.getValueAxisTick())));
 
     XYAreaRenderer areaRenderer = new XYAreaRenderer(XYAreaRenderer.AREA);
     areaRenderer.setOutline(true);
@@ -165,42 +164,47 @@ final class ChartBuilder {
         new float[]{6.0f * configuration.multiplierFloat(), 3.0f * configuration.multiplierFloat()} , 0.0f));
     plot.setRenderer(1, totalRenderer);
 
-    totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.max + abs(datasetAndTotal.min))));
+    totalAxis.setTickUnit(new NumberTickUnit(computeTickUnitSize(datasetAndTotal.max + abs(datasetAndTotal.min), configuration.getValueAxisTick())));
 
     return chart;
   }
 
-  static DateTickUnit computeDateTickUnit(NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats) {
+  static DateTickUnit computeDateTickUnit(NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats, TickConfiguration tick) {
     TimeAxisKey start = aggregatedDiffstats.firstKey();
     TimeAxisKey end = aggregatedDiffstats.lastKey();
 
     int yearsBetween = start.unitsBetween(end, DateTickUnitType.YEAR);
-    if (yearsBetween >= 5) {
-      return new DateTickUnit(DateTickUnitType.YEAR, computeTickUnitSize(yearsBetween));
+    int tickUpper = tick.getTickUpper();
+    if (yearsBetween >= tickUpper) {
+      return new DateTickUnit(DateTickUnitType.YEAR, computeTickUnitSize(yearsBetween, tick));
     }
 
     int monthsBetween = start.unitsBetween(end, DateTickUnitType.MONTH);
-    if (monthsBetween >= 5) {
-      return new DateTickUnit(DateTickUnitType.MONTH, computeTickUnitSize(monthsBetween));
+    if (monthsBetween >= tickUpper) {
+      return new DateTickUnit(DateTickUnitType.MONTH, computeTickUnitSize(monthsBetween, tick));
     }
 
     // TODO check if day is supported
     int daysBetween = start.unitsBetween(end, DateTickUnitType.DAY);
-    return new DateTickUnit(DateTickUnitType.DAY, computeTickUnitSize(daysBetween));
+    return new DateTickUnit(DateTickUnitType.DAY, computeTickUnitSize(daysBetween, tick));
   }
 
-  static int computeTickUnitSize(int maximum) {
-    int tenbase = 1;
-    while (tenbase * 10 < maximum) {
-      tenbase *= 10;
+  static int computeTickUnitSize(int maximum, TickConfiguration tick) {
+    int base = 1;
+    int tickUpper = tick.getTickUpper();
+    int tickLower = tick.getTickLower();
+    while (base * tickUpper < maximum) {
+      base *= tickUpper;
     }
-    int numberOfTicks = maximum / tenbase;
+    int numberOfTicks = maximum / base;
     if (numberOfTicks == 1) {
-      return tenbase / 10;
-    } else if (numberOfTicks <= 5 && tenbase > 10) {
-      return tenbase / 2;
+      return base / tickUpper;
     } else {
-      return tenbase;
+      if (numberOfTicks <= tickLower && base > tickUpper) {
+        return base / (tickUpper / tickLower);
+      } else {
+        return base;
+      }
     }
   }
 
