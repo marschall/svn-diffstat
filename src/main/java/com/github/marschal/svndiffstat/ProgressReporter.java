@@ -24,6 +24,7 @@ final class ProgressReporter {
   private long lastParsedRevision;
   private long lastRevisionLoggedTime;
   private long lastRevisionParsedTime;
+  private int totalRevisions;
 
   ProgressReporter(PrintStream out) {
     this.out = out;
@@ -36,7 +37,8 @@ final class ProgressReporter {
     this.loggingStart = System.currentTimeMillis();
   }
 
-  void revisionLoggingDone(List<?> coordinates) {
+  void revisionLoggingDone(List<?> coordinates, int totalRevisions) {
+    this.totalRevisions = totalRevisions;
     this.loggingEnd = System.currentTimeMillis();
     this.loggingSize = coordinates.size();
   }
@@ -112,9 +114,9 @@ final class ProgressReporter {
   private void reportLogging() {
     long duration = this.loggingEnd - this.loggingStart;
     if (duration >= 2000) {
-      this.out.printf("logged: %d revisions is %ds%n", this.loggingSize, duration / 1000);
+      this.out.printf("logged: %d of %d revisions is %ds%n", this.loggingSize, this.totalRevisions, duration / 1000);
     } else {
-      this.out.printf("logged: %d revisions is %dms%n", this.loggingSize, duration);
+      this.out.printf("logged: %d of %d revisions is %dms%n", this.loggingSize, this.totalRevisions, duration);
     }
   }
 

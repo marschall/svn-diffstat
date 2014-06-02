@@ -44,8 +44,10 @@ class DiffStatGenerator {
     SVNClientManager clientManager = SVNClientManager.newInstance();
 
     reporter.startRevisionLogging();
-    List<CommitCoordinate> coordinates = getCommitCoordinates(clientManager, configuration, reporter);
-    reporter.revisionLoggingDone(coordinates);
+    RevisionCollector handler = getCommitCoordinates(clientManager, configuration, reporter);
+    List<CommitCoordinate> coordinates = handler.getCoordinates();
+    int encountered = handler.getEncountered();
+    reporter.revisionLoggingDone(coordinates, encountered);
 
     reporter.startRevisionParsing();
     Map<Long, DiffStat> diffStats = getDiffStats(clientManager, coordinates, configuration, reporter);
@@ -156,7 +158,7 @@ class DiffStatGenerator {
     return revisionToDateMap;
   }
 
-  private static List<CommitCoordinate> getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
+  private static RevisionCollector getCommitCoordinates(SVNClientManager clientManager, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
     boolean stopOnCopy = false;
     boolean discoverChangedPaths = false;
     SVNRevision startRevision = SVNRevision.create(1L);
@@ -167,7 +169,9 @@ class DiffStatGenerator {
     long limit = Long.MAX_VALUE;
     clientManager.getLogClient().doLog(paths, startRevision, endRevision, stopOnCopy, discoverChangedPaths,
         limit, logHandler);
-    return logHandler.getCoordinates();
+    
+    
+    return logHandler;
   }
 
   private static Map<Long, DiffStat> getDiffStats(SVNClientManager clientManager, List<CommitCoordinate> coordinates, DiffStatConfiguration configuration, ProgressReporter reporter) throws SVNException {
