@@ -11,15 +11,18 @@ public class ConsoleConfiguration {
   boolean doubleSize = false;
 
   @Parameter(names = {"-width", "-w"},
-      description = "The width of the chart in pixels")
+      description = "The width of the chart in pixels",
+      validateValueWith = PositiveInteger.class)
   int width = 1200;
 
   @Parameter(names = {"-height", "-h"},
-      description = "The height of the chart in pixels")
+      description = "The height of the chart in pixels",
+      validateValueWith = PositiveInteger.class)
   int height = 600;
 
   @Parameter(names = {"-max", "-m"},
-      description = "Commits with more than this number of lines changed will be ignored.")
+      description = "Commits with more than this number of lines changed will be ignored.",
+      validateValueWith = PositiveInteger.class)
   int max = 10000;
 
   @Parameter(names = {"-author", "-a"},
@@ -42,23 +45,30 @@ public class ConsoleConfiguration {
   String protocol;
 
   @Parameter(names = {"-tdal"},
-      description = "The lowest number of date axis ticks to achieve.")
+      description = "The lowest number of date axis ticks to achieve.",
+      validateValueWith = PositiveInteger.class)
   int dateAxisTickLower = 5;
 
   @Parameter(names = {"-tdau"},
-      description = "The highest number of date axis ticks to achieve.")
+      description = "The highest number of date axis ticks to achieve.",
+      validateValueWith = PositiveInteger.class)
+  // TODO validate bigger than lower
   int dateAxisTickUpper = 10;
 
   @Parameter(names = {"-tval"},
-      description = "The lowest number of date axis ticks to achieve.")
+      description = "The lowest number of date axis ticks to achieve.",
+      validateValueWith = PositiveInteger.class)
   int valueAxisTickLower = 5;
 
   @Parameter(names = {"-tvau"},
-      description = "The highest number of date axis ticks to achieve.")
+      description = "The highest number of date axis ticks to achieve.",
+      validateValueWith = PositiveInteger.class)
+  // TODO validate bigger than lower
   int valueAxisTickUpper = 10;
   
   @Parameter(names = {"-td"},
-      description = "The highest number of domain ticks to achieve.")
+      description = "The highest number of domain ticks to achieve.",
+      validateValueWith = PositiveInteger.class)
   int domainTicks = 100;
 
 
