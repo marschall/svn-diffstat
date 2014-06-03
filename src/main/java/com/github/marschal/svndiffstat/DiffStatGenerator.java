@@ -55,7 +55,7 @@ class DiffStatGenerator {
 
     reporter.startAggregation();
     removeTooLargeValues(diffStats, configuration);
-    NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats);
+    NavigableMap<TimeAxisKey, DiffStat> aggregatedDiffstats = buildAggregatedDiffstats(coordinates, diffStats, configuration);
     insertZeroDataPoints(aggregatedDiffstats);
     reporter.aggregationDone(aggregatedDiffstats);
     
@@ -105,12 +105,12 @@ class DiffStatGenerator {
     }
   }
 
-  private static NavigableMap<TimeAxisKey, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats) {
+  private static NavigableMap<TimeAxisKey, DiffStat> buildAggregatedDiffstats(List<CommitCoordinate> coordinates, Map<Long, DiffStat> diffStats, DiffStatConfiguration configuration) {
     if (coordinates.isEmpty()) {
       return new TreeMap<>();
     }
 
-    TimeAxisKeyFactory factory = getFactory(coordinates);
+    TimeAxisKeyFactory factory = getFactory(coordinates, configuration);
 
     Map<Long, TimeAxisKey> revisionToDateMap = buildRevisionToDateMap(coordinates, factory);
 
@@ -131,12 +131,13 @@ class DiffStatGenerator {
     return aggregatedDiffstats;
   }
 
-  private static TimeAxisKeyFactory getFactory(List<CommitCoordinate> coordinates) {
+  private static TimeAxisKeyFactory getFactory(List<CommitCoordinate> coordinates, DiffStatConfiguration configuration) {
     Date first = coordinates.get(0).getDate();
     Date last = coordinates.get(coordinates.size() - 1).getDate();
 
-    if (YearMonthDay.daysBetween(first, last) >= 100) {
-      if (YearWeek.weeksBetween(first, last) >= 100) {
+    int maxTicks = configuration.getMaxDomainTicks();
+    if (YearMonthDay.daysBetween(first, last) >= maxTicks) {
+      if (YearWeek.weeksBetween(first, last) >= maxTicks) {
         return new YearMonthFactory();
       } else {
         return new YearWeekFactory();

@@ -17,8 +17,9 @@ final class DiffStatConfiguration {
   private final String protocol;
   private final TickConfiguration dateAxisTick;
   private final TickConfiguration valueAxisTick;
+  private final int maxDomainTicks;
 
-  DiffStatConfiguration(Set<String> authors, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize, int maxChanges, String protocol, TickConfiguration dateAxisTick, TickConfiguration valueAxisTick) {
+  DiffStatConfiguration(Set<String> authors, Set<String> includedFiles, File workingCopy, Dimension dimension, Path savePath, boolean doubleSize, int maxChanges, String protocol, TickConfiguration dateAxisTick, TickConfiguration valueAxisTick, int maxDomainTicks) {
     this.authors = authors;
     this.includedFiles = includedFiles;
     this.workingCopy = workingCopy;
@@ -29,6 +30,7 @@ final class DiffStatConfiguration {
     this.protocol = protocol;
     this.dateAxisTick = dateAxisTick;
     this.valueAxisTick = valueAxisTick;
+    this.maxDomainTicks = maxDomainTicks;
   }
 
   Set<String> getAuthors() {
@@ -81,6 +83,10 @@ final class DiffStatConfiguration {
 
   TickConfiguration getValueAxisTick() {
     return this.valueAxisTick;
+  }
+  
+  int getMaxDomainTicks() {
+    return this.maxDomainTicks;
   }
 
 }

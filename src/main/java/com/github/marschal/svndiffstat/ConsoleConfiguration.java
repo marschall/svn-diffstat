@@ -48,14 +48,18 @@ public class ConsoleConfiguration {
   @Parameter(names = {"-tdau"},
       description = "The highest number of date axis ticks to achieve.")
   int dateAxisTickUpper = 10;
-  
+
   @Parameter(names = {"-tval"},
       description = "The lowest number of date axis ticks to achieve.")
   int valueAxisTickLower = 5;
-  
+
   @Parameter(names = {"-tvau"},
       description = "The highest number of date axis ticks to achieve.")
   int valueAxisTickUpper = 10;
+  
+  @Parameter(names = {"-td"},
+      description = "The highest number of domain ticks to achieve.")
+  int domainTicks = 100;
 
 
 }

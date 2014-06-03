@@ -96,7 +96,7 @@ public class Main {
     boolean doubleSize = configuration.doubleSize;
     TickConfiguration dateAxisTick = new TickConfiguration(configuration.dateAxisTickLower, configuration.dateAxisTickUpper);
     TickConfiguration valueAxisTick = new TickConfiguration(configuration.valueAxisTickLower, configuration.valueAxisTickUpper);
-    return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max, configuration.protocol, dateAxisTick, valueAxisTick);
+    return new DiffStatConfiguration(authors, extensions, workingCopy, dimension, savePath, doubleSize, configuration.max, configuration.protocol, dateAxisTick, valueAxisTick, configuration.domainTicks);
   }
 
   static <T> Set<T> toSet(List<T> list) {
